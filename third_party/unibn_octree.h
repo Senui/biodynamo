@@ -28,6 +28,227 @@
 #include <limits>
 #include <vector>
 
+// size_t constexpr kTopLeftFrontIdx = 0;
+// size_t constexpr kTopRightFrontIdx = 1;
+// size_t constexpr kBottomLeftFrontIdx = 2;
+// size_t constexpr kBottomRightFrontIdx = 3;
+// size_t constexpr kTopLeftBackIdx = 4;
+// size_t constexpr kTopRightBackIdx = 5;
+// size_t constexpr kBottomLeftBackIdx = 6;
+// size_t constexpr kBottomRightBackIdx = 7;
+//
+// template <size_t OctantPosition>
+// Octant* Above(Octant* current) {}
+//
+// template <>
+// Octant* Above<kTopLeftFrontIdx>(Octant* current) {
+//
+// }
+//
+// // Above, Bellow, Left, Right, UpperLeft, LowerLeft, UpperRight, LowerRight
+//
+// template <size_t OctantPosition>
+// void GetNeighboringOctants(Octant* current, InlineVector<Octant*, 26>* neighbors ) {}
+//
+// template <>
+// void GetNeighboringOctants<kTopLeftFrontIdx>(Octant* current, InlineVector<Octant*, 26>* neighbors ) {
+//   auto siblings = current->parent->childs;
+//
+//   // all siblings
+//   neighbors.push_back(siblings[kTopRightFrontIdx]);
+//   neighbors.push_back(siblings[kBottomLeftFrontIdx]);
+//   neighbors.push_back(siblings[kBottomRightFrontIdx]);
+//   neighbors.push_back(siblings[kTopLeftBackIdx]);
+//   neighbors.push_back(siblings[kTopRightBackIdx]);
+//   neighbors.push_back(siblings[kBottomLeftBackIdx]);
+//   neighbors.push_back(siblings[kBottomRightBackIdx]);
+//
+//   // parent octant neighbors
+//   size_t parent_idx = current->parent->idx;
+//
+//   // above
+//   auto above_parent = ...;
+//   if(above_parent != nullptr) {
+//     if (above_parent.isLeaf) {
+//       neighbors.push_back(above);
+//     } else {
+//       const auto& above_childs = above_parent->childs;
+//       neigbors.push_back(above_childs[kBottomLeftFrontIdx]);
+//       neigbors.push_back(above_childs[kBottomRightFrontIdx]);
+//       neigbors.push_back(above_childs[kBottomLeftBackIdx]);
+//       neigbors.push_back(above_childs[kBottomRightBackIdx]);
+//     }
+//   }
+//
+//   // left
+//   auto left_parent = ...;
+//   if (left_parent != nullptr) {
+//     if (left_parent.isLeaf) {
+//       neighbors.push_back(lef_parent)
+//     } else {
+//       const auto& left_child = left_parent->childs;
+//       neigbors.push_back(left_child[kTopRightFrontIdx]);
+//       neigbors.push_back(left_child[kBottomRightFrontIdx]);
+//       neigbors.push_back(left_child[kTopRightBackIdx]);
+//       neigbors.push_back(left_child[kBottomRightBackIdx]);
+//     }
+//   }
+//
+//   // upper left
+//   auto upper_left_parent = ...;
+//   if (upper_left_parent != nullptr) {
+//     if (upper_left_parent.isLeaf) {
+//       neighbors.push_back(lef_parent)
+//     } else {
+//       const auto& left_child = left_parent->childs;
+//       neigbors.push_back(left_child[kTopRightFrontIdx]);
+//       neigbors.push_back(left_child[kBottomRightFrontIdx]);
+//       neigbors.push_back(left_child[kTopRightBackIdx]);
+//       neigbors.push_back(left_child[kBottomRightBackIdx]);
+//     }
+//   }
+// }
+
+// -----------------------------------------------------------------------------
+// from nanoflann
+
+/**
+ * Pooled storage allocator
+ *
+ * The following routines allow for the efficient allocation of storage in
+ * small chunks from a specified pool.  Rather than allowing each structure
+ * to be freed individually, an entire pool of storage is freed at once.
+ * This method has two advantages over just using malloc() and free().  First,
+ * it is far more efficient for allocating small objects, as there is
+ * no overhead for remembering all the information needed to free each
+ * object or consolidating fragmented memory.  Second, the decision about
+ * how long to keep an object is made at the time of allocation, and there
+ * is no need to track down all the objects to free them.
+ *
+ */
+
+const size_t     WORDSIZE=16;
+const size_t     BLOCKSIZE=8192;
+// const size_t     BLOCKSIZE=1024*1024*1024;
+
+class PooledAllocator
+{
+  /* We maintain memory alignment to word boundaries by requiring that all
+      allocations be in multiples of the machine wordsize.  */
+  /* Size of machine word in bytes.  Must be power of 2. */
+  /* Minimum number of bytes requested at a time from	the system.  Must be multiple of WORDSIZE. */
+
+
+  size_t  remaining;  /* Number of bytes left in current block of storage. */
+  void*   base;     /* Pointer to base of current block of storage. */
+  void*   loc;      /* Current location in block to next allocate memory. */
+
+  void internal_init()
+  {
+    remaining = 0;
+    base = NULL;
+    usedMemory = 0;
+    wastedMemory = 0;
+  }
+
+public:
+  size_t  usedMemory;
+  size_t  wastedMemory;
+
+  /**
+      Default constructor. Initializes a new pool.
+   */
+  PooledAllocator() {
+    internal_init();
+  }
+
+  /**
+   * Destructor. Frees all the memory allocated in this pool.
+   */
+  ~PooledAllocator() {
+    free_all();
+  }
+
+  /** Frees all allocated memory chunks */
+  void free_all()
+  {
+    while (base != NULL) {
+      void *prev = *(static_cast<void**>( base)); /* Get pointer to prev block. */
+      ::free(base);
+      base = prev;
+    }
+    internal_init();
+  }
+
+  /**
+   * Returns a pointer to a piece of new memory of the given size in bytes
+   * allocated from the pool.
+   */
+  void* malloc(const size_t req_size)
+  {
+    /* Round size up to a multiple of wordsize.  The following expression
+        only works for WORDSIZE that is a power of 2, by masking last bits of
+        incremented size to zero.
+     */
+    const size_t size = (req_size + (WORDSIZE - 1)) & ~(WORDSIZE - 1);
+
+    /* Check whether a new block must be allocated.  Note that the first word
+        of a block is reserved for a pointer to the previous block.
+     */
+    if (size > remaining) {
+
+      wastedMemory += remaining;
+
+      /* Allocate new storage. */
+      const size_t blocksize = (size + sizeof(void*) + (WORDSIZE-1) > BLOCKSIZE) ?
+            size + sizeof(void*) + (WORDSIZE-1) : BLOCKSIZE;
+
+      // use the standard C malloc to allocate memory
+      void* m = ::malloc(blocksize);
+      if (!m) {
+        fprintf(stderr,"Failed to allocate memory.\n");
+        return NULL;
+      }
+
+      /* Fill first word of new block with pointer to previous block. */
+      static_cast<void**>(m)[0] = base;
+      base = m;
+
+      size_t shift = 0;
+      //int size_t = (WORDSIZE - ( (((size_t)m) + sizeof(void*)) & (WORDSIZE-1))) & (WORDSIZE-1);
+
+      remaining = blocksize - sizeof(void*) - shift;
+      loc = (static_cast<char*>(m) + sizeof(void*) + shift);
+    }
+    void* rloc = loc;
+    loc = static_cast<char*>(loc) + size;
+    remaining -= size;
+
+    usedMemory += size;
+
+    return rloc;
+  }
+
+  /**
+   * Allocates (using this pool) a generic type T.
+   *
+   * Params:
+   *     count = number of instances to allocate.
+   * Returns: pointer (of type T*) to memory buffer
+   */
+  template <typename T>
+  T* allocate(const size_t count = 1)
+  {
+    T* mem = static_cast<T*>(this->malloc(sizeof(T)*count));
+    return mem;
+  }
+
+};
+
+PooledAllocator gPool;
+
+// -----------------------------------------------------------------------------
+
 // needed for gtest access to protected/private members ...
 namespace
 {
@@ -232,9 +453,10 @@ class Octree
  public:
   Octree();
   ~Octree();
+  class Octant;
 
   /** \brief initialize octree with all points **/
-  void initialize(const ContainerT& pts, const OctreeParams& params = OctreeParams());
+  void initialize(const ContainerT& pts, std::vector<Octant*>* octant_mapping, const OctreeParams& params = OctreeParams());
 
   /** \brief initialize octree only from pts that are inside indexes. **/
   void initialize(const ContainerT& pts, const std::vector<uint32_t>& indexes,
@@ -253,13 +475,18 @@ class Octree
   void radiusNeighbors(const PointT& query, float radius, std::vector<uint32_t>& resultIndices,
                        std::vector<float>& distances) const;
 
+
+ template <typename Distance>
+ void radiusNeighborsCached(const Octant* containing_octant, uint32_t id, const PointT& query, float radius, std::vector<uint32_t>& resultIndices,
+                      std::vector<float>& distances) const;
+
   /** \brief nearest neighbor queries. Using minDistance >= 0, we explicitly disallow self-matches.
    * @return index of nearest neighbor n with Distance::compute(query, n) > minDistance and otherwise -1.
    **/
   template <typename Distance>
   int32_t findNeighbor(const PointT& query, float minDistance = -1) const;
 
- protected:
+ // protected:
   class Octant
   {
    public:
@@ -275,6 +502,7 @@ class Octree
     uint32_t start, end;  // start and end in succ_
     uint32_t size;        // number of points
 
+    Octant* parent = nullptr;
     Octant* child[8];
   };
 
@@ -296,7 +524,7 @@ class Octree
    *
    * \return  octant with children nodes.
    */
-  Octant* createOctant(float x, float y, float z, float extent, uint32_t startIdx, uint32_t endIdx, uint32_t size);
+  Octant* createOctant(Octant* parent, float x, float y, float z, float extent, uint32_t startIdx, uint32_t endIdx, uint32_t size);
 
   /** @return true, if search finished, otherwise false. **/
   template <typename Distance>
@@ -310,6 +538,23 @@ class Octree
   template <typename Distance>
   void radiusNeighbors(const Octant* octant, const PointT& query, float radius, float sqrRadius,
                        std::vector<uint32_t>& resultIndices, std::vector<float>& distances) const;
+
+  template <typename Distance>
+  void radiusNeighborsCachedImpl(const Octant* octant, uint32_t id, const PointT& query, float radius, float sqrRadius,
+                      std::vector<uint32_t>& resultIndices,
+                                           std::vector<float>& distances) const;
+
+  template <typename Distance>
+  const Octant* findStartingOctant(const Octant* current, const PointT& query, float sqrRadius) const {
+    if (current == nullptr) {
+      return nullptr;
+    } else if (contains<Distance>(query, sqrRadius, current))
+    {
+      return current;
+    } else {
+      return findStartingOctant<Distance>(current->parent, query, sqrRadius);
+    }
+  }
 
   /** \brief test if search ball S(q,r) overlaps with octant
    *
@@ -347,6 +592,7 @@ class Octree
   OctreeParams params_;
   Octant* root_;
   const ContainerT* data_;
+  std::vector<Octant*>* octant_mapping_;
 
   std::vector<uint32_t> successors_;  // single connected list of next point indices...
 
@@ -363,7 +609,7 @@ Octree<PointT, ContainerT>::Octant::Octant()
 template <typename PointT, typename ContainerT>
 Octree<PointT, ContainerT>::Octant::~Octant()
 {
-  for (uint32_t i = 0; i < 8; ++i) delete child[i];
+  // for (uint32_t i = 0; i < 8; ++i) delete child[i];
 }
 
 template <typename PointT, typename ContainerT>
@@ -375,12 +621,12 @@ Octree<PointT, ContainerT>::Octree()
 template <typename PointT, typename ContainerT>
 Octree<PointT, ContainerT>::~Octree()
 {
-  delete root_;
-  if (params_.copyPoints) delete data_;
+  // delete root_;
+  // if (params_.copyPoints) delete data_;
 }
 
 template <typename PointT, typename ContainerT>
-void Octree<PointT, ContainerT>::initialize(const ContainerT& pts, const OctreeParams& params)
+void Octree<PointT, ContainerT>::initialize(const ContainerT& pts, std::vector<Octant*>* octant_mapping, const OctreeParams& params)
 {
   clear();
   params_ = params;
@@ -389,6 +635,8 @@ void Octree<PointT, ContainerT>::initialize(const ContainerT& pts, const OctreeP
     data_ = new ContainerT(pts);
   else
     data_ = &pts;
+
+  octant_mapping_ = octant_mapping;
 
   const uint32_t N = pts.size();
   successors_ = std::vector<uint32_t>(N);
@@ -428,7 +676,7 @@ void Octree<PointT, ContainerT>::initialize(const ContainerT& pts, const OctreeP
     if (extent > maxextent) maxextent = extent;
   }
 
-  root_ = createOctant(ctr[0], ctr[1], ctr[2], maxextent, 0, N - 1, N);
+  root_ = createOctant(nullptr, ctr[0], ctr[1], ctr[2], maxextent, 0, N - 1, N);
 }
 
 template <typename PointT, typename ContainerT>
@@ -487,7 +735,7 @@ void Octree<PointT, ContainerT>::initialize(const ContainerT& pts, const std::ve
     if (extent > maxextent) maxextent = extent;
   }
 
-  root_ = createOctant(ctr[0], ctr[1], ctr[2], maxextent, indexes[0], lastIdx, indexes.size());
+  root_ = createOctant(nullptr, ctr[0], ctr[1], ctr[2], maxextent, indexes[0], lastIdx, indexes.size());
 }
 
 template <typename PointT, typename ContainerT>
@@ -501,14 +749,16 @@ void Octree<PointT, ContainerT>::clear()
 }
 
 template <typename PointT, typename ContainerT>
-typename Octree<PointT, ContainerT>::Octant* Octree<PointT, ContainerT>::createOctant(float x, float y, float z,
+typename Octree<PointT, ContainerT>::Octant* Octree<PointT, ContainerT>::createOctant(Octant* parent, float x, float y, float z,
                                                                                       float extent, uint32_t startIdx,
                                                                                       uint32_t endIdx, uint32_t size)
 {
   // For a leaf we don't have to change anything; points are already correctly linked or correctly reordered.
-  Octant* octant = new Octant;
+  // Octant* octant = new Octant;
+  Octant* octant = gPool.allocate<Octant>();
 
   octant->isLeaf = true;
+  octant->parent = parent;
 
   octant->x = x;
   octant->y = y;
@@ -519,6 +769,13 @@ typename Octree<PointT, ContainerT>::Octant* Octree<PointT, ContainerT>::createO
   octant->end = endIdx;
   octant->size = size;
 
+  uint32_t idx = startIdx;
+  for (uint32_t i = 0; i < size; ++i)
+  {
+    (*octant_mapping_)[idx] = octant;
+    idx = successors_[idx];
+  }
+
   static const float factor[] = {-0.5f, 0.5f};
 
   // subdivide subset of points and re-link points according to Morton codes
@@ -527,9 +784,13 @@ typename Octree<PointT, ContainerT>::Octant* Octree<PointT, ContainerT>::createO
     octant->isLeaf = false;
 
     const ContainerT& points = *data_;
-    std::vector<uint32_t> childStarts(8, 0);
-    std::vector<uint32_t> childEnds(8, 0);
-    std::vector<uint32_t> childSizes(8, 0);
+    // std::vector<uint32_t> childStarts(8, 0);
+    // std::vector<uint32_t> childEnds(8, 0);
+    // std::vector<uint32_t> childSizes(8, 0);
+    uint32_t childStarts[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    uint32_t childEnds[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    uint32_t childSizes[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+
 
     // re-link disjoint child subsets...
     uint32_t idx = startIdx;
@@ -567,7 +828,7 @@ typename Octree<PointT, ContainerT>::Octant* Octree<PointT, ContainerT>::createO
       float childY = y + factor[(i & 2) > 0] * extent;
       float childZ = z + factor[(i & 4) > 0] * extent;
 
-      octant->child[i] = createOctant(childX, childY, childZ, childExtent, childStarts[i], childEnds[i], childSizes[i]);
+      octant->child[i] = createOctant(octant, childX, childY, childZ, childExtent, childStarts[i], childEnds[i], childSizes[i]);
 
       if (firsttime)
         octant->start = octant->child[i]->start;
@@ -678,6 +939,57 @@ void Octree<PointT, ContainerT>::radiusNeighbors(const Octant* octant, const Poi
 
 template <typename PointT, typename ContainerT>
 template <typename Distance>
+void Octree<PointT, ContainerT>::radiusNeighborsCachedImpl(const Octant* octant, uint32_t id, const PointT& query, float radius,
+                                                 float sqrRadius, std::vector<uint32_t>& resultIndices,
+                                                 std::vector<float>& distances) const
+{
+  const ContainerT& points = *data_;
+
+  // if search ball S(q,r) contains octant, simply add point indexes and compute squared distances.
+  // if (contains<Distance>(query, sqrRadius, octant))
+  // {
+  //   uint32_t idx = octant->start;
+  //   for (uint32_t i = 0; i < octant->size; ++i)
+  //   {
+  //     resultIndices.push_back(idx);
+  //     // TODO distances.push_back(Distance::compute(query, points[idx]));
+  //     idx = successors_[idx];
+  //   }
+  //
+  //   return;  // early pruning.
+  // }
+
+  if (octant->isLeaf)
+  {
+    uint32_t idx = octant->start;
+    for (uint32_t i = 0; i < octant->size; ++i)
+    {
+      // if (id < idx) {
+        const PointT& p = points[idx];
+        float dist = Distance::compute(query, p);
+        if (dist < sqrRadius)
+        {
+          resultIndices.push_back(idx);
+          // distances.push_back(dist);
+        }
+      // }
+      idx = successors_[idx];
+    }
+
+    return;
+  }
+
+  // check whether child nodes are in range.
+  for (uint32_t c = 0; c < 8; ++c)
+  {
+    if (octant->child[c] == 0) continue;
+    if (!overlaps<Distance>(query, radius, sqrRadius, octant->child[c])) continue;
+    radiusNeighborsCachedImpl<Distance>(octant->child[c], id, query, radius, sqrRadius, resultIndices, distances);
+  }
+}
+
+template <typename PointT, typename ContainerT>
+template <typename Distance>
 void Octree<PointT, ContainerT>::radiusNeighbors(const PointT& query, float radius,
                                                  std::vector<uint32_t>& resultIndices) const
 {
@@ -700,6 +1012,27 @@ void Octree<PointT, ContainerT>::radiusNeighbors(const PointT& query, float radi
 
   float sqrRadius = Distance::sqr(radius);  // "squared" radius
   radiusNeighbors<Distance>(root_, query, radius, sqrRadius, resultIndices, distances);
+}
+
+template <typename PointT, typename ContainerT>
+template <typename Distance>
+void Octree<PointT, ContainerT>::radiusNeighborsCached(const Octant* octant, uint32_t id, const PointT& query, float radius,
+                                                 std::vector<uint32_t>& resultIndices,
+                                                 std::vector<float>& distances) const
+{
+  resultIndices.clear();
+  distances.clear();
+  if (root_ == 0) return;
+
+  float sqrRadius = Distance::sqr(radius);  // "squared" radius
+  const Octant* starting_octant = findStartingOctant<Distance>(octant, query, sqrRadius);
+
+  if (starting_octant != nullptr) {
+    radiusNeighborsCachedImpl<Distance>(starting_octant, id, query, radius, sqrRadius, resultIndices, distances);
+  } else {
+    radiusNeighborsCachedImpl<Distance>(root_, id, query, radius, sqrRadius, resultIndices, distances);
+  }
+
 }
 
 template <typename PointT, typename ContainerT>

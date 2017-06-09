@@ -28,13 +28,22 @@ class NeighborUnibnOp {
     }
 
     unibn::OctreeParams params;
-    params.bucketSize = 16;
+    params.bucketSize = 1;
+
+    std::vector<unibn::Octree<std::array<double, 3> >::Octant*> octant_mapping(cells->GetAllPositions().size());
+    for( auto& element : octant_mapping) { element = nullptr; }
 
     unibn::Octree<std::array<double, 3> > octree;
 
     std::chrono::steady_clock::time_point begin_build = std::chrono::steady_clock::now();
-    octree.initialize(cells->GetAllPositions(), params);
+    octree.initialize(cells->GetAllPositions(), &octant_mapping, params);
     std::chrono::steady_clock::time_point end_build = std::chrono::steady_clock::now();
+
+    size_t counter = 0;
+    for (auto element : octant_mapping) {
+      if (element == nullptr) { counter++; }
+    }
+    std::cout << "uninitized octant mappings " << counter << std::endl;
 
     if (print_terminal == 1) {
       std::cout << "==================[UniBn]====================" << std::endl;
@@ -48,30 +57,30 @@ class NeighborUnibnOp {
 // calc neighbors
 std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 int avg_num_neighbors = 0;
-#pragma omp parallel for
+// holds the indices of found neighbors
+std::vector<uint32_t> found_neighbors;
+std::vector<float> distances;
+double search_radius = sqrt(distance_);
+// pragma omp parallel for firstprivate(found_neighbors, search_radius, distances)
     for (size_t i = 0; i < cells->size(); i++) {
       // fixme make param
       // according to roman 50 - 100 micron
-      double search_radius = sqrt(distance_);
-
-      // holds the indices of found neighbors
-      std::vector<uint32_t> found_neighbors;
-
       const auto& query = (*cells)[i].GetPosition();
+      found_neighbors.clear();
 
       // calculate neighbors
-      octree.radiusNeighbors<unibn::L2Distance<std::array<double, 3> > >(query, search_radius, found_neighbors);
+      octree.radiusNeighborsCached<unibn::L2Distance<std::array<double, 3> > >(octant_mapping[i], i, query, search_radius, found_neighbors, distances);
       avg_num_neighbors += found_neighbors.size();
 
-      // transform result
-      InlineVector<int, 8> neighbors;
-      neighbors.reserve(found_neighbors.size() - 1);
-      for (size_t j = 0; j < found_neighbors.size(); j++) {
-        if (found_neighbors[j] != i) {
-          neighbors.push_back(found_neighbors[j]);
-        }
-      }
-      (*cells)[i].SetNeighbors(neighbors);
+      // // transform result
+      // InlineVector<int, 8> neighbors;
+      // neighbors.reserve(found_neighbors.size() - 1);
+      // for (size_t j = 0; j < found_neighbors.size(); j++) {
+      //   if (found_neighbors[j] != i) {
+      //     neighbors.push_back(found_neighbors[j]);
+      //   }
+      // }
+      // (*cells)[i].SetNeighbors(neighbors);
     }
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
