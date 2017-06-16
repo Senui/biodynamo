@@ -95,7 +95,7 @@ int main(int args, char** argv) {
     // RunTest(&cells, NeighborOp(700), neighbor_op_file, threads);
     // RunTest(&cells, NeighborNanoflannOp(700), neighbor_nf_file, threads);
     // RunTest(&cells, NeighborPclOp(700), neighbor_pcl_file, threads);
-    RunTest(&cells, NeighborUnibnOp(700), neighbor_unibn_file, threads);
+    RunTest(&cells, NeighborUnibnOp(21), neighbor_unibn_file, threads);
   } else {
     std::cout << "Error args: ./octree_bench <cells_per_dim> <num_treads> <dirname>" << std::endl;
   }

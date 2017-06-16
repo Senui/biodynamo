@@ -30,7 +30,7 @@ class NeighborUnibnOp {
     unibn::OctreeParams params;
     params.bucketSize = 1;
 
-    std::vector<unibn::Octree<std::array<double, 3> >::Octant*> octant_mapping(cells->GetAllPositions().size());
+    std::vector<unibn::Octant*> octant_mapping(cells->GetAllPositions().size());
     for( auto& element : octant_mapping) { element = nullptr; }
 
     unibn::Octree<std::array<double, 3> > octree;
@@ -69,7 +69,8 @@ double search_radius = sqrt(distance_);
       found_neighbors.clear();
 
       // calculate neighbors
-      octree.radiusNeighborsCached<unibn::L2Distance<std::array<double, 3> > >(octant_mapping[i], i, query, search_radius, found_neighbors, distances);
+      // octree.radiusNeighborsCached<unibn::L2Distance<std::array<double, 3> > >(octant_mapping[i], i, query, search_radius, found_neighbors, distances);
+      octree.radiusNeighborsRelative<unibn::L2Distance<std::array<double, 3> > >(octant_mapping[i], i, query, distance_, found_neighbors);
       avg_num_neighbors += found_neighbors.size();
 
       // // transform result
@@ -86,7 +87,7 @@ double search_radius = sqrt(distance_);
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     if (print_terminal == 1) {
       std::cout << "Neighbor search time = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "ms\n";
-      // std::cout << "# of neighbors found = " << (avg_num_neighbors/(cells->size())) << std::endl;
+      std::cout << "# of neighbors found = " << (avg_num_neighbors/(cells->size())) << std::endl;
     }
     if (filename != nullptr) {
       outfile << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << ",";

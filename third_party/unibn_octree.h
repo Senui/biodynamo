@@ -27,23 +27,73 @@
 #include <cstring>  // memset.
 #include <limits>
 #include <vector>
+#include <Vc/Vc>
+// needed for gtest access to protected/private members ...
+namespace
+{
+class OctreeTest;
+}
 
-// size_t constexpr kTopLeftFrontIdx = 0;
-// size_t constexpr kTopRightFrontIdx = 1;
-// size_t constexpr kBottomLeftFrontIdx = 2;
-// size_t constexpr kBottomRightFrontIdx = 3;
-// size_t constexpr kTopLeftBackIdx = 4;
-// size_t constexpr kTopRightBackIdx = 5;
-// size_t constexpr kBottomLeftBackIdx = 6;
-// size_t constexpr kBottomRightBackIdx = 7;
+namespace unibn
+{
+
+struct Octant
+{
+ public:
+  Octant() {memset(&child, 0, 8 * sizeof(Octant*));}
+  ~Octant() {
+    // TODO delete childs
+  }
+
+  bool isLeaf;
+
+  // bounding box of the octant needed for overlap and contains tests...
+  float x, y, z;  // center
+  float extent;   // half of side-length
+
+  uint32_t start, end;  // start and end in succ_
+  uint32_t size;        // number of points
+  uint8_t position_id;
+
+  Octant* parent = nullptr;
+  Octant* child[8];
+};
+
+uint8_t constexpr kBottomLeftFrontIdx = 0;
+uint8_t constexpr kBottomRightFrontIdx = 1;
+uint8_t constexpr kTopLeftFrontIdx = 2;
+uint8_t constexpr kTopRightFrontIdx = 3;
+uint8_t constexpr kBottomLeftBackIdx = 4;
+uint8_t constexpr kBottomRightBackIdx = 5;
+uint8_t constexpr kTopLeftBackIdx = 6;
+uint8_t constexpr kTopRightBackIdx = 7;
+
+Octant* Above(Octant* octant) {
+  switch(octant->position_id) {
+    case kBottomLeftFrontIdx:
+      return octant->parent->child[kTopLeftFrontIdx];
+    case kBottomRightFrontIdx:
+      return octant->parent->child[kTopRightFrontIdx];
+    case kBottomLeftBackIdx:
+      return octant->parent->child[kTopLeftBackIdx];
+    case kBottomRightBackIdx:
+      return octant->parent->child[kTopRightBackIdx];
+  }
+  // auto above_parent = octant->parent-
+  // if (octant->parent->isLeaf) return octant->parent;
+  // switch(octant->position_id) {
+  return nullptr;
+}
+
+// Octant* NeighborNonSibling(Octant* octant, std::vector<Octant*>& neighbors) {
+//   switch(octant->position_id) {
+//     case kBottomLeftFrontIdx:
 //
-// template <size_t OctantPosition>
-// Octant* Above(Octant* current) {}
 //
-// template <>
-// Octant* Above<kTopLeftFrontIdx>(Octant* current) {
-//
+//       break;
+//   }
 // }
+
 //
 // // Above, Bellow, Left, Right, UpperLeft, LowerLeft, UpperRight, LowerRight
 //
@@ -249,14 +299,7 @@ PooledAllocator gPool;
 
 // -----------------------------------------------------------------------------
 
-// needed for gtest access to protected/private members ...
-namespace
-{
-class OctreeTest;
-}
 
-namespace unibn
-{
 
 /**
  * Some traits to access coordinates regardless of the specific implementation of point
@@ -453,7 +496,6 @@ class Octree
  public:
   Octree();
   ~Octree();
-  class Octant;
 
   /** \brief initialize octree with all points **/
   void initialize(const ContainerT& pts, std::vector<Octant*>* octant_mapping, const OctreeParams& params = OctreeParams());
@@ -487,24 +529,7 @@ class Octree
   int32_t findNeighbor(const PointT& query, float minDistance = -1) const;
 
  // protected:
-  class Octant
-  {
-   public:
-    Octant();
-    ~Octant();
 
-    bool isLeaf;
-
-    // bounding box of the octant needed for overlap and contains tests...
-    float x, y, z;  // center
-    float extent;   // half of side-length
-
-    uint32_t start, end;  // start and end in succ_
-    uint32_t size;        // number of points
-
-    Octant* parent = nullptr;
-    Octant* child[8];
-  };
 
   // not copyable, not assignable ...
   Octree(Octree&);
@@ -524,7 +549,7 @@ class Octree
    *
    * \return  octant with children nodes.
    */
-  Octant* createOctant(Octant* parent, float x, float y, float z, float extent, uint32_t startIdx, uint32_t endIdx, uint32_t size);
+  Octant* createOctant(Octant* parent, float x, float y, float z, float extent, uint32_t startIdx, uint32_t endIdx, uint32_t size, uint8_t position_id);
 
   /** @return true, if search finished, otherwise false. **/
   template <typename Distance>
@@ -556,6 +581,120 @@ class Octree
     }
   }
 
+  template <typename Distance>
+  void radiusNeighborsRelative(Octant* containing_octant, uint32_t id, const PointT& query, float radius, std::vector<uint32_t>& resultIndices) const {
+     resultIndices.clear();
+     if (root_ == 0) return;
+
+     float sqrRadius = Distance::sqr(radius);  // "squared" radius
+    //  const Octant* starting_octant = findStartingOctant<Distance>(octant, query, sqrRadius);
+    Octant* starting_octant = containing_octant;
+    auto half_radius = radius / 2;
+    while(starting_octant->extent < half_radius) starting_octant = starting_octant->parent;
+
+    // starting_octant and all siblings
+    radiusNeighborsRelativeImpl<Distance>(starting_octant->parent, id, query, radius, sqrRadius, resultIndices);
+    // radiusNeighborsRelativeVecImpl(starting_octant->parent, id, query, radius, sqrRadius, resultIndices);
+
+    // radiusNeighborsRelativeImpl<Distance>(starting_octant, id, query, radius, sqrRadius, resultIndices);
+    // for(size_t i = 0; i < 8; i++) {
+    //   auto current = starting_octant->parent->child[i];
+    //   if (current == starting_octant) continue;
+    //   radiusNeighborsRelativeImpl<Distance>(current, id, query, radius, sqrRadius, resultIndices);
+    // }
+
+   }
+
+  template <typename Distance>
+  void radiusNeighborsRelativeImpl(const Octant* octant, uint32_t id, const PointT& query, float radius, float sqrRadius,
+                      std::vector<uint32_t>& resultIndices) const {
+    if (octant == nullptr) return;
+
+    const ContainerT& points = *data_;
+
+      uint32_t idx = octant->start;
+      const auto size = octant->size;
+      for (uint32_t i = 0; i < size; ++i) {
+        uint32_t next_idx = successors_[idx];
+
+          const PointT& p = points[idx];
+          float dist = Distance::compute(query, p);
+          if (dist < sqrRadius) {
+            resultIndices.push_back(idx);
+            // distances.push_back(dist);
+          }
+        idx = next_idx;
+      }
+
+      return;
+    // }
+
+    // check whether child nodes are in range.
+    // for (uint32_t c = 0; c < 8; ++c)
+    // {
+    //   if (octant->child[c] == 0) continue;
+    //   if (!overlaps<Distance>(query, radius, sqrRadius, octant->child[c])) continue;
+    //   radiusNeighborsCachedImpl<Distance>(octant->child[c], id, query, radius, sqrRadius, resultIndices, distances);
+    // }
+  }
+
+
+  void radiusNeighborsRelativeVecImpl(const Octant* octant, uint32_t id, const PointT& query, float radius, float sqrRadius,
+                      std::vector<uint32_t>& resultIndices) const {
+    if (octant == nullptr) return;
+
+    const ContainerT& points = *data_;
+    using Vc::float_v;
+    const size_t kVecLen = float_v::Size;
+
+    const float_v query_x(get<0>(query));
+    const float_v query_y(get<1>(query));
+    const float_v query_z(get<2>(query));
+    const float_v squared_radius(sqrRadius);
+
+    float_v x;
+    float_v y;
+    float_v z;
+    float_v dist;
+
+    // float diff1 = get<0>(p) - get<0>(q);
+    // float diff2 = get<1>(p) - get<1>(q);
+    // float diff3 = get<2>(p) - get<2>(q);
+    //
+    // return std::pow(diff1, 2) + std::pow(diff2, 2) + std::pow(diff3, 2);
+
+    uint32_t idx = octant->start;
+    const auto size = octant->size;
+    for (uint32_t i = 0; i < size; ++i) {
+      size_t vec_idx = i % kVecLen;
+      uint32_t next_idx = successors_[idx];
+
+      // copy data into vectors
+      const PointT& p = points[idx];
+      x[vec_idx] = get<0>(p);
+      y[vec_idx] = get<1>(p);
+      z[vec_idx] = get<2>(p);
+
+      // calculate
+      if( vec_idx == 0 || i + 1 == size) {
+        auto diff1 = x - query_x;
+        auto diff2 = y - query_y;
+        auto diff3 = z - query_z;
+        dist = diff1 * diff1 + diff2 * diff2 + diff3 * diff3;
+
+        auto dist_smaller_radius = dist < squared_radius;
+
+        for (size_t j = 0; j < kVecLen; j++) {
+          if (dist_smaller_radius[j]) {
+            resultIndices.push_back(j); // FIXME wrong index
+            // distances.push_back(dist);
+          }
+        }
+      }
+
+      idx = next_idx;
+    }
+  }
   /** \brief test if search ball S(q,r) overlaps with octant
    *
    * @param query   query point
@@ -599,18 +738,18 @@ class Octree
   friend class ::OctreeTest;
 };
 
-template <typename PointT, typename ContainerT>
-Octree<PointT, ContainerT>::Octant::Octant()
-    : isLeaf(true), x(0.0f), y(0.0f), z(0.0f), extent(0.0f), start(0), end(0), size(0)
-{
-  memset(&child, 0, 8 * sizeof(Octant*));
-}
-
-template <typename PointT, typename ContainerT>
-Octree<PointT, ContainerT>::Octant::~Octant()
-{
-  // for (uint32_t i = 0; i < 8; ++i) delete child[i];
-}
+// template <typename PointT, typename ContainerT>
+// Octree<PointT, ContainerT>::Octant::Octant()
+//     : isLeaf(true), x(0.0f), y(0.0f), z(0.0f), extent(0.0f), start(0), end(0), size(0)
+// {
+//   memset(&child, 0, 8 * sizeof(Octant*));
+// }
+//
+// template <typename PointT, typename ContainerT>
+// Octree<PointT, ContainerT>::Octant::~Octant()
+// {
+//   // for (uint32_t i = 0; i < 8; ++i) delete child[i];
+// }
 
 template <typename PointT, typename ContainerT>
 Octree<PointT, ContainerT>::Octree()
@@ -676,7 +815,7 @@ void Octree<PointT, ContainerT>::initialize(const ContainerT& pts, std::vector<O
     if (extent > maxextent) maxextent = extent;
   }
 
-  root_ = createOctant(nullptr, ctr[0], ctr[1], ctr[2], maxextent, 0, N - 1, N);
+  root_ = createOctant(nullptr, ctr[0], ctr[1], ctr[2], maxextent, 0, N - 1, N, 0);
 }
 
 template <typename PointT, typename ContainerT>
@@ -735,7 +874,7 @@ void Octree<PointT, ContainerT>::initialize(const ContainerT& pts, const std::ve
     if (extent > maxextent) maxextent = extent;
   }
 
-  root_ = createOctant(nullptr, ctr[0], ctr[1], ctr[2], maxextent, indexes[0], lastIdx, indexes.size());
+  root_ = createOctant(nullptr, ctr[0], ctr[1], ctr[2], maxextent, indexes[0], lastIdx, indexes.size(), 0);
 }
 
 template <typename PointT, typename ContainerT>
@@ -749,9 +888,9 @@ void Octree<PointT, ContainerT>::clear()
 }
 
 template <typename PointT, typename ContainerT>
-typename Octree<PointT, ContainerT>::Octant* Octree<PointT, ContainerT>::createOctant(Octant* parent, float x, float y, float z,
+Octant* Octree<PointT, ContainerT>::createOctant(Octant* parent, float x, float y, float z,
                                                                                       float extent, uint32_t startIdx,
-                                                                                      uint32_t endIdx, uint32_t size)
+                                                                                      uint32_t endIdx, uint32_t size, uint8_t position_id)
 {
   // For a leaf we don't have to change anything; points are already correctly linked or correctly reordered.
   // Octant* octant = new Octant;
@@ -768,6 +907,8 @@ typename Octree<PointT, ContainerT>::Octant* Octree<PointT, ContainerT>::createO
   octant->start = startIdx;
   octant->end = endIdx;
   octant->size = size;
+
+  octant->position_id = position_id;
 
   uint32_t idx = startIdx;
   for (uint32_t i = 0; i < size; ++i)
@@ -828,7 +969,12 @@ typename Octree<PointT, ContainerT>::Octant* Octree<PointT, ContainerT>::createO
       float childY = y + factor[(i & 2) > 0] * extent;
       float childZ = z + factor[(i & 4) > 0] * extent;
 
-      octant->child[i] = createOctant(octant, childX, childY, childZ, childExtent, childStarts[i], childEnds[i], childSizes[i]);
+      // TODO
+      // std::cout << "index " << i << std::endl;
+      // std::cout << "x " << childX / 635 - 1<< std::endl;
+      // std::cout << "y " << childY / 635 - 1<< std::endl;
+      // std::cout << "z " << childZ / 635 - 1<< std::endl << std::endl;
+      octant->child[i] = createOctant(octant, childX, childY, childZ, childExtent, childStarts[i], childEnds[i], childSizes[i], i);
 
       if (firsttime)
         octant->start = octant->child[i]->start;
