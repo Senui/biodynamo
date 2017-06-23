@@ -28,7 +28,7 @@ class NeighborUnibnOp {
     }
 
     unibn::OctreeParams params;
-    params.bucketSize = 1;
+    params.bucketSize = 16;
 
     std::vector<unibn::Octant*> octant_mapping(cells->GetAllPositions().size());
     for( auto& element : octant_mapping) { element = nullptr; }
@@ -61,7 +61,7 @@ int avg_num_neighbors = 0;
 std::vector<uint32_t> found_neighbors;
 std::vector<float> distances;
 double search_radius = sqrt(distance_);
-// pragma omp parallel for firstprivate(found_neighbors, search_radius, distances)
+#pragma omp parallel for firstprivate(found_neighbors, search_radius, distances)
     for (size_t i = 0; i < cells->size(); i++) {
       // fixme make param
       // according to roman 50 - 100 micron
@@ -71,6 +71,7 @@ double search_radius = sqrt(distance_);
       // calculate neighbors
       // octree.radiusNeighborsCached<unibn::L2Distance<std::array<double, 3> > >(octant_mapping[i], i, query, search_radius, found_neighbors, distances);
       octree.radiusNeighborsRelative<unibn::L2Distance<std::array<double, 3> > >(octant_mapping[i], i, query, distance_, found_neighbors);
+      // octree.radiusNeighbors<unibn::L2Distance<std::array<double, 3> > >(query, distance_, found_neighbors);
       avg_num_neighbors += found_neighbors.size();
 
       // // transform result

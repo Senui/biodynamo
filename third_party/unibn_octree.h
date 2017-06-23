@@ -589,20 +589,21 @@ class Octree
      float sqrRadius = Distance::sqr(radius);  // "squared" radius
     //  const Octant* starting_octant = findStartingOctant<Distance>(octant, query, sqrRadius);
     Octant* starting_octant = containing_octant;
-    auto half_radius = radius / 2;
-    while(starting_octant->extent < half_radius) starting_octant = starting_octant->parent;
+    // auto half_radius = radius / 2;
+    // while(starting_octant->extent < half_radius) starting_octant = starting_octant->parent;
 
     // starting_octant and all siblings
-    radiusNeighborsRelativeImpl<Distance>(starting_octant->parent, id, query, radius, sqrRadius, resultIndices);
+    // radiusNeighborsRelativeImpl<Distance>(starting_octant->parent->parent, id, query, radius, sqrRadius, resultIndices);
     // radiusNeighborsRelativeVecImpl(starting_octant->parent, id, query, radius, sqrRadius, resultIndices);
+    radiusNeighbors<Distance>(starting_octant->parent->parent, query, radius, sqrRadius, resultIndices);
 
     // radiusNeighborsRelativeImpl<Distance>(starting_octant, id, query, radius, sqrRadius, resultIndices);
     // for(size_t i = 0; i < 8; i++) {
     //   auto current = starting_octant->parent->child[i];
     //   if (current == starting_octant) continue;
-    //   radiusNeighborsRelativeImpl<Distance>(current, id, query, radius, sqrRadius, resultIndices);
+    //   radiusNeighbors<Distance>(current, query, radius, sqrRadius, resultIndices);
+    //   // radiusNeighborsRelativeImpl<Distance>(starting_octant->parent, id, query, radius, sqrRadius, resultIndices);
     // }
-
    }
 
   template <typename Distance>
@@ -617,12 +618,12 @@ class Octree
       for (uint32_t i = 0; i < size; ++i) {
         uint32_t next_idx = successors_[idx];
 
-          const PointT& p = points[idx];
-          float dist = Distance::compute(query, p);
-          if (dist < sqrRadius) {
+          // const PointT& p = points[idx];
+          // float dist = Distance::compute(query, p);
+          // if (dist < sqrRadius) {
             resultIndices.push_back(idx);
             // distances.push_back(dist);
-          }
+          // }
         idx = next_idx;
       }
 
