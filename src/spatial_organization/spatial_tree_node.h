@@ -33,7 +33,7 @@ class SpatialTreeNode {
   ///  @tparam T - type of the object
   ///  @param distance - distance to search within
   ///  @return
-  virtual vector<pair<T, T> > GetNeighbors(double distance) const;
+  virtual vector<pair<T, T> > GetNeighbors(float distance) const;
 
  protected:
   Bound bound_;
@@ -56,7 +56,7 @@ class SpatialTreeNode {
   ///  pairs
   ///  without its points)
   static void GetNeighbors(SpatialTreeNode<T> const *a,
-                           SpatialTreeNode<T> const *b, double distance,
+                           SpatialTreeNode<T> const *b, float distance,
                            vector<pair<T, T> > *result);
 };
 
@@ -66,7 +66,7 @@ const Bound &SpatialTreeNode<T>::GetBound() const {
 }
 
 template <typename T>
-vector<pair<T, T> > SpatialTreeNode<T>::GetNeighbors(double distance) const {
+vector<pair<T, T> > SpatialTreeNode<T>::GetNeighbors(float distance) const {
   vector<pair<T, T> > result;
   GetNeighbors(this, this, distance * distance, &result);
   return result;
@@ -75,7 +75,7 @@ vector<pair<T, T> > SpatialTreeNode<T>::GetNeighbors(double distance) const {
 template <typename T>
 void SpatialTreeNode<T>::GetNeighbors(SpatialTreeNode<T> const *a,
                                       SpatialTreeNode<T> const *b,
-                                      double distance,
+                                      float distance,
                                       vector<pair<T, T> > *result) {
   if (a->IsLeaf() && b->IsLeaf()) {
     const auto &a_objs = a->GetObjects();

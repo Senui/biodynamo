@@ -9,16 +9,16 @@ namespace bdm {
 
 using std::array;
 
-inline double SquaredEuclideanDistance(std::array<double, 3> pos1,
-                                       std::array<double, 3> pos2) {
-  const double dx = pos2[0] - pos1[0];
-  const double dy = pos2[1] - pos1[1];
-  const double dz = pos2[2] - pos1[2];
+inline float SquaredEuclideanDistance(std::array<float, 3> pos1,
+                                       std::array<float, 3> pos2) {
+  const float dx = pos2[0] - pos1[0];
+  const float dy = pos2[1] - pos1[1];
+  const float dz = pos2[2] - pos1[2];
   return (dx * dx + dy * dy + dz * dz);
 }
 
 int Run(size_t cells_per_dim) {
-  const double space = 20;
+  const float space = 20;
 
   // create 3D grid of cells
   auto cells = Cell<>::NewEmptySoa();

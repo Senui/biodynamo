@@ -16,7 +16,7 @@ using spatial_organization::Point;
 class NeighborOp {
  public:
   NeighborOp() {}
-  explicit NeighborOp(double distance) : distance_(distance) {}
+  explicit NeighborOp(float distance) : distance_(distance) {}
   ~NeighborOp() {}
   NeighborOp(const NeighborOp&) = delete;
   NeighborOp& operator=(const NeighborOp&) = delete;
@@ -38,7 +38,7 @@ class NeighborOp {
       Point pos(position[0], position[1], position[2]);
       tree->Put(pos, i);
     }
-    double search_radius = sqrt(distance_);
+    float search_radius = sqrt(distance_);
 
     // Container for neighbors
     InlineVector<int, 8>* i_neighbors =
@@ -67,7 +67,7 @@ class NeighborOp {
   }
 
  private:
-  double distance_ = 3000;
+  float distance_ = 3000;
 };
 
 }  // namespace bdm

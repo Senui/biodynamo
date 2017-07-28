@@ -196,11 +196,11 @@ class Grid {
     auto grid_dimensions = CalculateGridDimensions(sim_objects);
     // todo: in some cases smaller box length still gives correct simulation
     // results (and is faster). Find out what this should be set to
-    box_length_ = 2 * ceil(largest_object_size_);
+    box_length_ = ceil(largest_object_size_);
     for (int i = 0; i < 3; i++) {
-      double dimension_length =
+      float dimension_length =
           grid_dimensions[2 * i + 1] - grid_dimensions[2 * i];
-      double r = fmod(dimension_length, box_length_);
+      float r = fmod(dimension_length, box_length_);
       // If the grid is not perfectly divisible along each dimension by the
       // resolution, extend the grid so that it is
       if (r != 0.0) {
@@ -221,7 +221,7 @@ class Grid {
 
     // Calculate how many boxes fit along each dimension
     for (int i = 0; i < 3; i++) {
-      double dimension_length =
+      float dimension_length =
           grid_dimensions[2 * i + 1] - grid_dimensions[2 * i];
       while (dimension_length > 0.0) {
         dimension_length -= box_length_;
@@ -261,9 +261,9 @@ class Grid {
   /// @return     The grid dimensions
   ///
   template <typename TContainer>
-  array<double, 6> CalculateGridDimensions(TContainer* sim_objects) {  // NOLINT
+  array<float, 6> CalculateGridDimensions(TContainer* sim_objects) {  // NOLINT
     auto inf = Param::kInfinity;
-    array<double, 6> grid_dimensions = {{inf, 0, inf, 0, inf, 0}};
+    array<float, 6> grid_dimensions = {{inf, 0, inf, 0, inf, 0}};
     for (size_t i = 0; i < sim_objects->size(); i++) {
       auto position = (*sim_objects)[i].GetPosition();
       auto diameter = (*sim_objects)[i].GetDiameter();
@@ -291,11 +291,11 @@ class Grid {
   ///
   /// @return     The distance between the two points
   ///
-  inline double SquaredEuclideanDistance(std::array<double, 3> pos1,
-                                         std::array<double, 3> pos2) const {
-    const double dx = pos2[0] - pos1[0];
-    const double dy = pos2[1] - pos1[1];
-    const double dz = pos2[2] - pos1[2];
+  inline float SquaredEuclideanDistance(std::array<float, 3> pos1,
+                                         std::array<float, 3> pos2) const {
+    const float dx = pos2[0] - pos1[0];
+    const float dy = pos2[1] - pos1[1];
+    const float dz = pos2[2] - pos1[2];
     return (dx * dx + dy * dy + dz * dz);
   }
 
@@ -338,7 +338,7 @@ class Grid {
   /// @tparam     SO      The type of the simulation object
   ///
   template <typename Lambda, typename SO>
-  void ForEachNeighborWithinRadius(Lambda lambda, SO* query, double radius) {
+  void ForEachNeighborWithinRadius(Lambda lambda, SO* query, float radius) {
     auto& position = query->GetPosition();
     auto idx = GetBoxIndex(position);
 
@@ -368,7 +368,7 @@ class Grid {
   ///                          objects
   ///
   template <typename TContainer>
-  void SetNeighborsWithinRadius(TContainer* sim_objects, double radius) {
+  void SetNeighborsWithinRadius(TContainer* sim_objects, float radius) {
     vector<size_t> sum(positions_->size());
     InlineVector<int, 8> neighbors;
 #pragma omp parallel for firstprivate(neighbors)
@@ -401,13 +401,13 @@ class Grid {
   ///
   /// @return     The size of the largest object
   ///
-  double GetLargestObjectSize() { return largest_object_size_; }
+  float GetLargestObjectSize() { return largest_object_size_; }
 
  private:
   /// The vector containing all the boxes in the grid
   vector<Box> boxes_;
   /// The vector containing the positions of the simulation objects
-  vector<array<double, 3>>* positions_ = nullptr;
+  vector<array<float, 3>>* positions_ = nullptr;
   /// Length of a Box
   uint32_t box_length_ = 0;
   /// Stores the number of boxes for each axis
@@ -421,7 +421,7 @@ class Grid {
   /// An empty box that will be used to initialize the pad boxes
   Box* empty_box_ = nullptr;
   /// The size of the largest object in the simulation
-  double largest_object_size_ = 0;
+  float largest_object_size_ = 0;
 
   ///
   /// @brief      Gets the Moore (i.e adjacent) boxes of the query box
@@ -539,7 +539,7 @@ class Grid {
   ///
   /// @return     The box index.
   ///
-  size_t GetBoxIndex(const array<double, 3> position) {
+  size_t GetBoxIndex(const array<float, 3> position) {
     array<uint32_t, 3> box_coord;
     box_coord[0] = floor(position[0]) / box_length_;
     box_coord[1] = floor(position[1]) / box_length_;

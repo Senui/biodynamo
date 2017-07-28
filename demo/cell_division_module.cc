@@ -36,12 +36,12 @@ void Simulate(size_t cells_per_dim = 128) {
   cells->reserve(cells_per_dim * cells_per_dim * cells_per_dim);
 
   // 5. Define initial model - in this case 3D grid of cells
-  double space = 20;
+  float space = 20;
   for (size_t i = 0; i < cells_per_dim; i++) {
     for (size_t j = 0; j < cells_per_dim; j++) {
       for (size_t k = 0; k < cells_per_dim; k++) {
         MyCell<Scalar> cell({k * space, j * space, i * space});
-        cell.SetDiameter(10);
+        cell.SetDiameter(30);
         cell.SetAdherence(0.4);
         cell.SetMass(1.0);
         cell.UpdateVolume();

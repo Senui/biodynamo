@@ -98,7 +98,7 @@ class KdTreeNode : public SpatialTreeNode<T> {
   KdTreeNode<T> *children_[2];
   vector<pair<Point, T>> objects_;
   size_t max_amount_of_objects_in_node_;
-  double node_area_;
+  float node_area_;
   size_t max_depth_;
 
   /// Split point differs each partition in order XYZ
@@ -127,7 +127,7 @@ class KdTreeNode : public SpatialTreeNode<T> {
   /// @param k - part of the surface, which is wanted to be found
   /// @param axis - what axis should be used to split
   /// @return - area value
-  double AreaOfKthPartOfSpaceNode(int k, int axis);
+  float AreaOfKthPartOfSpaceNode(int k, int axis);
 
   /// Gets point, which we use for surface area heuristics
   /// @return sah rating
@@ -234,7 +234,7 @@ void KdTreeNode<T>::Put(Point const &p, T obj) {
 
 template <typename T>
 void KdTreeNode<T>::SplitUsingVaryingMedian() {
-  double x_left, y_left, z_left, x_right, y_right, z_right;
+  float x_left, y_left, z_left, x_right, y_right, z_right;
   Bound bnd = this->bound_;
   if (!this->is_leaf_node_) {
     return;
@@ -324,7 +324,7 @@ void KdTreeNode<T>::SplitUsingSingleXMedian() {
 
 template <typename T>
 void KdTreeNode<T>::SplitUsingSAH() {
-  double x_left, y_left, z_left, x_right, y_right, z_right;
+  float x_left, y_left, z_left, x_right, y_right, z_right;
   Bound bnd = this->bound_;
   if (!this->is_leaf_node_) {
     return;
@@ -378,7 +378,7 @@ void KdTreeNode<T>::SplitUsingSAH() {
 
 template <typename T>
 void KdTreeNode<T>::SplitUsingCenterOfSpaceNode() {
-  double x_left, y_left, z_left, x_right, y_right, z_right;
+  float x_left, y_left, z_left, x_right, y_right, z_right;
   Bound bnd = this->bound_;
   if (!this->is_leaf_node_) {
     return;
@@ -482,9 +482,9 @@ bool KdTreeNode<T>::IsLeaf() const {
 
 template <typename T>
 Point KdTreeNode<T>::GetSAHSplitPoint() {
-  double objects_count[kNumerOfSpaces], leftside_count[kNumerOfSpaces - 1],
+  float objects_count[kNumerOfSpaces], leftside_count[kNumerOfSpaces - 1],
       rightside_count[kNumerOfSpaces - 1];
-  double sah, temp;
+  float sah, temp;
   Point split_point;
   int axis = 0;
 
@@ -640,7 +640,7 @@ Point KdTreeNode<T>::GetMedianOnXAxis() {
 }
 
 template <typename T>
-double KdTreeNode<T>::AreaOfKthPartOfSpaceNode(int k, int axis) {
+float KdTreeNode<T>::AreaOfKthPartOfSpaceNode(int k, int axis) {
   if (axis == 0) {
     return this->node_area_ -
            k / kNumerOfSpaces *

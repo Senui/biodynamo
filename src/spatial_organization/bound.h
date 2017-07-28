@@ -22,7 +22,7 @@ class Bound {
     near_right_top_point_ = Point(1, 1, 1);
   }
 
-  Bound(double x1, double y1, double z1, double x2, double y2, double z2) {
+  Bound(float x1, float y1, float z1, float x2, float y2, float z2) {
     far_left_bottom_point_ = Point(x1, y1, z1);
     near_right_top_point_ = Point(x2, y2, z2);
   }
@@ -31,19 +31,19 @@ class Bound {
       : far_left_bottom_point_(p1), near_right_top_point_(p2) {}
 
   /// Check if 'x' is between 'a' and 'b' on the line
-  bool IsBetween(double x, double a, double b) const {
-    double min = fmin(a, b);
-    double max = fmax(a, b);
+  bool IsBetween(float x, float a, float b) const {
+    float min = fmin(a, b);
+    float max = fmax(a, b);
     return (x >= min && x <= max);
   }
 
   /// Calculate distance between two line segments on the line.
   /// This method assumed that segments are not overlaped.
-  double DistanceBetweenSegments(double x, double y, double a, double b) const {
-    double min_xy = fmin(x, y);
-    double max_xy = fmax(x, y);
-    double min_ab = fmin(a, b);
-    double max_ab = fmax(a, b);
+  float DistanceBetweenSegments(float x, float y, float a, float b) const {
+    float min_xy = fmin(x, y);
+    float max_xy = fmax(x, y);
+    float min_ab = fmin(a, b);
+    float max_ab = fmax(a, b);
 
     if (min_xy >= max_ab) {
       return min_xy - max_ab;
@@ -52,14 +52,14 @@ class Bound {
   }
 
   /// Calculate squared distance between two boundaries in 3-d space.
-  double SquaredDistance(Bound const &b) const {
+  float SquaredDistance(Bound const &b) const {
     bool is_overlap_x;
     bool is_overlap_y;
     bool is_overlap_z;
 
-    double bx[2][2] = {{Far(), Near()}, {b.Far(), b.Near()}};
-    double by[2][2] = {{Left(), Right()}, {b.Left(), b.Right()}};
-    double bz[2][2] = {{Bottom(), Top()}, {b.Bottom(), b.Top()}};
+    float bx[2][2] = {{Far(), Near()}, {b.Far(), b.Near()}};
+    float by[2][2] = {{Left(), Right()}, {b.Left(), b.Right()}};
+    float bz[2][2] = {{Bottom(), Top()}, {b.Bottom(), b.Top()}};
 
     // check axis_ that have overlaped projections
     is_overlap_x = (IsBetween(bx[0][0], bx[1][0], bx[1][1])) ||
@@ -75,7 +75,7 @@ class Bound {
                    (IsBetween(bz[1][0], bz[0][0], bz[0][1])) ||
                    (IsBetween(bz[1][1], bz[0][0], bz[0][1]));
 
-    double dx = 0, dy = 0, dz = 0;
+    float dx = 0, dy = 0, dz = 0;
 
     // calculate distance only if there is no overlaping
     if (!is_overlap_x) {
@@ -96,31 +96,31 @@ class Bound {
     return (far_left_bottom_point_ + near_right_top_point_) * 0.5;
   }
 
-  double Near() const { return near_right_top_point_.x_; }
+  float Near() const { return near_right_top_point_.x_; }
 
-  double Far() const { return far_left_bottom_point_.x_; }
+  float Far() const { return far_left_bottom_point_.x_; }
 
-  double Left() const { return far_left_bottom_point_.y_; }
+  float Left() const { return far_left_bottom_point_.y_; }
 
-  double Right() const { return near_right_top_point_.y_; }
+  float Right() const { return near_right_top_point_.y_; }
 
-  double Top() const { return near_right_top_point_.z_; }
+  float Top() const { return near_right_top_point_.z_; }
 
-  double Bottom() const { return far_left_bottom_point_.z_; }
+  float Bottom() const { return far_left_bottom_point_.z_; }
 
-  double Length() const {
+  float Length() const {
     return near_right_top_point_.x_ - far_left_bottom_point_.x_;
   }
 
-  double Width() const {
+  float Width() const {
     return near_right_top_point_.y_ - far_left_bottom_point_.y_;
   }
 
-  double Height() const {
+  float Height() const {
     return near_right_top_point_.z_ - far_left_bottom_point_.z_;
   }
 
-  double HalfSurfaceArea() const {
+  float HalfSurfaceArea() const {
     return Width() * Length() + Height() * Length() + Width() * Height();
   }
 };

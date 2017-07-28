@@ -15,7 +15,7 @@ class NeighborGridOp {
  public:
   explicit NeighborGridOp(Grid::Adjacency adjacency = Grid::kHigh,
                           bool set_local_neighbors = false,
-                          double radius = 3000)
+                          float radius = 3000)
       : adjacency_(adjacency),
         set_local_neighbors_(set_local_neighbors),
         radius_(radius) {}
@@ -39,7 +39,7 @@ class NeighborGridOp {
   /// Boolean to cache the local neighbors for each simulation object or not
   bool set_local_neighbors_;
   /// The searching radius for which to set the local neighbors to
-  double radius_;
+  float radius_;
 };
 
 }  // namespace bdm

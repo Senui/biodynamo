@@ -176,7 +176,7 @@ class Exporter {
   /// This function creates a .pvd file that lists the individual files across
   /// the different times.
   /// This .pvd can be read by Paraview for visualization.
-  void CreatePVDFile(string filename, int iterations, double increment) {
+  void CreatePVDFile(string filename, int iterations, float increment) {
     std::ofstream pvd(filename + ".pvd");
 
     pvd << "<?xml version=\"1.0\"?>" << std::endl;

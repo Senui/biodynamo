@@ -5,7 +5,7 @@
 namespace bdm {
 
 Cell<Soa> CellFactory(size_t cells_per_dim) {
-  const double space = 20;
+  const float space = 20;
 
   auto cells = Cell<>::NewEmptySoa();
   cells.reserve(cells_per_dim * cells_per_dim * cells_per_dim);

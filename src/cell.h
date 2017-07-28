@@ -36,8 +36,8 @@ class CellExt : public Base {
 
  public:
   CellExt() {}
-  explicit CellExt(double diameter) : diameter_(diameter) { UpdateVolume(); }
-  explicit CellExt(const array<double, 3>& position)
+  explicit CellExt(float diameter) : diameter_(diameter) { UpdateVolume(); }
+  explicit CellExt(const array<float, 3>& position)
       : position_(position), mass_location_(position) {}
 
   virtual ~CellExt() {}
@@ -68,7 +68,7 @@ class CellExt : public Base {
   /// initialized in this method
   /// @param volume_ratio the ratio (Volume daughter 1)/(Volume daughter 2). 1.0
   /// gives equal cells.
-  void Divide(Self<Scalar>* daughter, double volume_ratio);
+  void Divide(Self<Scalar>* daughter, float volume_ratio);
 
   /// Divide the cell. Of the two daughter cells, one is this one (but smaller,
   /// with half GeneSubstances etc.),
@@ -76,7 +76,7 @@ class CellExt : public Base {
   /// @param daughter second daughter cell = scalar instance which will be
   /// initialized in this method
   /// @param axis specifies direction of division
-  void Divide(Self<Scalar>* daughter, const array<double, 3>& axis);
+  void Divide(Self<Scalar>* daughter, const array<float, 3>& axis);
 
   /// Divide the cell. Of the two daughter cells, one is this one (but smaller,
   /// with half GeneSubstances etc.),
@@ -86,12 +86,12 @@ class CellExt : public Base {
   /// @param volume_ratio the ratio (Volume daughter 1)/(Volume daughter 2). 1.0
   /// gives equal cells.
   /// @param axis specifies direction of division
-  void Divide(Self<Scalar>* daughter, double volume_ratio,
-              const array<double, 3>& axis);
+  void Divide(Self<Scalar>* daughter, float volume_ratio,
+              const array<float, 3>& axis);
 
   /// Forwards call to DivideImpl @see DivideImpl
-  void Divide(Self<Scalar>* daughter, double volume_ratio, double phi,
-              double theta);
+  void Divide(Self<Scalar>* daughter, float volume_ratio, float phi,
+              float theta);
 
   /// Divide mother cell in two daughter cells\n
   /// When mother cell divides, by definition:\n
@@ -109,55 +109,55 @@ class CellExt : public Base {
   /// @param phi azimuthal angle (polar coordinate)
   /// @param theta polar angle (polar coordinate)
   /// @see \link simulation_object_util.h Divide \endlink
-  virtual void DivideImpl(Self<Scalar>* daughter, double volume_ratio,
-                          double phi, double theta);
+  virtual void DivideImpl(Self<Scalar>* daughter, float volume_ratio,
+                          float phi, float theta);
 
-  double GetAdherence() const { return adherence_[kIdx]; }
+  float GetAdherence() const { return adherence_[kIdx]; }
 
-  double GetDiameter() const { return diameter_[kIdx]; }
+  float GetDiameter() const { return diameter_[kIdx]; }
 
-  double GetMass() const { return density_[kIdx] * volume_[kIdx]; }
+  float GetMass() const { return density_[kIdx] * volume_[kIdx]; }
 
-  double GetDensity() const { return density_[kIdx]; }
+  float GetDensity() const { return density_[kIdx]; }
 
-  const array<double, 3>& GetMassLocation() const {
+  const array<float, 3>& GetMassLocation() const {
     return mass_location_[kIdx];
   }
 
-  const array<double, 3>& GetPosition() const { return position_[kIdx]; }
+  const array<float, 3>& GetPosition() const { return position_[kIdx]; }
 
-  array<double, 3>& GetPosition() { return position_[kIdx]; }
+  array<float, 3>& GetPosition() { return position_[kIdx]; }
 
-  vec<array<double, 3>>& GetAllPositions() { return position_; }
+  vec<array<float, 3>>& GetAllPositions() { return position_; }
 
-  const array<double, 3>& GetTractorForce() const {
+  const array<float, 3>& GetTractorForce() const {
     return tractor_force_[kIdx];
   }
 
-  double GetVolume() const { return volume_[kIdx]; }
+  float GetVolume() const { return volume_[kIdx]; }
 
   const InlineVector<int, 8>& GetNeighbors() const { return neighbors_[kIdx]; }
 
-  void SetAdherence(double adherence) { adherence_[kIdx] = adherence; }
+  void SetAdherence(float adherence) { adherence_[kIdx] = adherence; }
 
-  void SetDiameter(double diameter) {
+  void SetDiameter(float diameter) {
     diameter_[kIdx] = diameter;
     UpdateVolume();
   }
 
-  void SetMass(double mass) { density_[kIdx] = mass / volume_[kIdx]; }
+  void SetMass(float mass) { density_[kIdx] = mass / volume_[kIdx]; }
 
-  void SetDensity(double density) { density_[kIdx] = density; }
+  void SetDensity(float density) { density_[kIdx] = density; }
 
-  void SetMassLocation(const array<double, 3>& mass_location) {
+  void SetMassLocation(const array<float, 3>& mass_location) {
     mass_location_[kIdx] = mass_location;
   }
 
-  void SetPosition(const array<double, 3>& position) {
+  void SetPosition(const array<float, 3>& position) {
     position_[kIdx] = position;
   }
 
-  void SetTractorForce(const array<double, 3>& tractor_force) {
+  void SetTractorForce(const array<float, 3>& tractor_force) {
     tractor_force_[kIdx] = tractor_force;
   }
 
@@ -165,9 +165,9 @@ class CellExt : public Base {
     neighbors_[kIdx] = neighbors;
   }
 
-  void ChangeVolume(double speed) {
+  void ChangeVolume(float speed) {
     // scaling for integration step
-    double delta = speed * Param::kSimulationTimeStep;
+    float delta = speed * Param::kSimulationTimeStep;
     volume_[kIdx] += delta;
     if (volume_[kIdx] < 5.2359877E-7) {
       volume_[kIdx] = 5.2359877E-7;
@@ -185,16 +185,16 @@ class CellExt : public Base {
     volume_[kIdx] = Math::kPi / 6 * std::pow(diameter_[kIdx], 3);
   }
 
-  void UpdateMassLocation(const array<double, 3>& delta) {
+  void UpdateMassLocation(const array<float, 3>& delta) {
     mass_location_[kIdx][0] += delta[0];
     mass_location_[kIdx][1] += delta[1];
     mass_location_[kIdx][2] += delta[2];
   }
 
-  void GetForceOn(const array<double, 3>& ref_mass_location,
-                  double ref_diameter, array<double, 3>* force) const {
+  void GetForceOn(const array<float, 3>& ref_mass_location,
+                  float ref_diameter, array<float, 3>* force) const {
     DefaultForce default_force;
-    double iof_coefficient = Param::kSphereDefaultInterObjectCoefficient;
+    float iof_coefficient = Param::kSphereDefaultInterObjectCoefficient;
 
     default_force.ForceBetweenSpheres(ref_mass_location, ref_diameter,
                                       iof_coefficient, mass_location_[kIdx],
@@ -207,23 +207,23 @@ class CellExt : public Base {
   /// ([1,0,0],[0,1,0],[0,0,1]).
   /// @param coord: position in absolute coordinates - [x,y,z] cartesian values
   /// @return the position in local coordinates
-  array<double, 3> TransformCoordinatesGlobalToPolar(
-      const array<double, 3>& coord) const;
+  array<float, 3> TransformCoordinatesGlobalToPolar(
+      const array<float, 3>& coord) const;
 
-  vec<array<double, 3>> position_;
-  vec<array<double, 3>> mass_location_;
-  vec<array<double, 3>> tractor_force_;
-  vec<double> diameter_;
-  vec<double> volume_;
-  vec<double> adherence_;
-  vec<double> density_;
+  vec<array<float, 3>> position_;
+  vec<array<float, 3>> mass_location_;
+  vec<array<float, 3>> tractor_force_;
+  vec<float> diameter_;
+  vec<float> volume_;
+  vec<float> adherence_;
+  vec<float> density_;
 
   /// First axis of the local coordinate system.
-  vec<array<double, 3>> x_axis_ = {array<double, 3>{1.0, 0.0, 0.0}};
+  vec<array<float, 3>> x_axis_ = {array<float, 3>{1.0, 0.0, 0.0}};
   /// Second axis of the local coordinate system.
-  vec<array<double, 3>> y_axis_ = {array<double, 3>{0.0, 1.0, 0.0}};
+  vec<array<float, 3>> y_axis_ = {array<float, 3>{0.0, 1.0, 0.0}};
   /// Third axis of the local coordinate system.
-  vec<array<double, 3>> z_axis_ = {array<double, 3>{0.0, 0.0, 1.0}};
+  vec<array<float, 3>> z_axis_ = {array<float, 3>{0.0, 0.0, 1.0}};
 
   /// stores a list of neighbor ids for each scalar cell
   vec<InlineVector<int, 8>> neighbors_;
@@ -259,17 +259,17 @@ inline void CellExt<T, U>::Divide(Self<Scalar>* daughter) {
 }
 
 template <typename T, typename U>
-inline void CellExt<T, U>::Divide(Self<Scalar>* daughter, double volume_ratio) {
+inline void CellExt<T, U>::Divide(Self<Scalar>* daughter, float volume_ratio) {
   // find random point on sphere (based on :
   // http://mathworld.wolfram.com/SpherePointPicking.html)
-  double theta = 2 * Math::kPi * gRandom.NextDouble();
-  double phi = std::acos(2 * gRandom.NextDouble() - 1);
+  float theta = 2 * Math::kPi * gRandom.NextDouble();
+  float phi = std::acos(2 * gRandom.NextDouble() - 1);
   DivideImpl(daughter, volume_ratio, phi, theta);
 }
 
 template <typename T, typename U>
 inline void CellExt<T, U>::Divide(Self<Scalar>* daughter,
-                                  const array<double, 3>& axis) {
+                                  const array<float, 3>& axis) {
   auto polarcoord = TransformCoordinatesGlobalToPolar(
       Matrix::Add(axis, mass_location_[kIdx]));
   DivideImpl(daughter, 0.9 + 0.2 * gRandom.NextDouble(), polarcoord[1],
@@ -277,37 +277,37 @@ inline void CellExt<T, U>::Divide(Self<Scalar>* daughter,
 }
 
 template <typename T, typename U>
-inline void CellExt<T, U>::Divide(Self<Scalar>* daughter, double volume_ratio,
-                                  const array<double, 3>& axis) {
+inline void CellExt<T, U>::Divide(Self<Scalar>* daughter, float volume_ratio,
+                                  const array<float, 3>& axis) {
   auto polarcoord = TransformCoordinatesGlobalToPolar(
       Matrix::Add(axis, mass_location_[kIdx]));
   DivideImpl(daughter, volume_ratio, polarcoord[1], polarcoord[2]);
 }
 
 template <typename T, typename U>
-inline void CellExt<T, U>::Divide(Self<Scalar>* daughter, double volume_ratio,
-                                  double phi, double theta) {
+inline void CellExt<T, U>::Divide(Self<Scalar>* daughter, float volume_ratio,
+                                  float phi, float theta) {
   DivideImpl(daughter, volume_ratio, phi, theta);
 }
 
 template <typename T, typename TBiologyModuleVariant>
 inline void CellExt<T, TBiologyModuleVariant>::DivideImpl(
-    Self<Scalar>* daughter, double volume_ratio, double phi, double theta) {
+    Self<Scalar>* daughter, float volume_ratio, float phi, float theta) {
   // A) Defining some values
   // ..................................................................
   // defining the two radii s.t total volume is conserved
   // * radius^3 = r1^3 + r2^3 ;
   // * volume_ratio = r2^3 / r1^3
-  double radius = diameter_[kIdx] * 0.5;
-  double r1 = radius / std::pow(1.0 + volume_ratio, 1.0 / 3.0);
-  double r2 = radius / std::pow(1.0 + 1 / volume_ratio, 1.0 / 3.0);
+  float radius = diameter_[kIdx] * 0.5;
+  float r1 = radius / std::pow(1.0 + volume_ratio, 1.0 / 3.0);
+  float r2 = radius / std::pow(1.0 + 1 / volume_ratio, 1.0 / 3.0);
 
   // define an axis for division (along which the nuclei will move)
-  double x_coord = std::cos(theta) * std::sin(phi);
-  double y_coord = std::sin(theta) * std::sin(phi);
-  double z_coord = std::cos(phi);
-  double total_length_of_displacement = radius / 4.0;
-  array<double, 3> axis_of_division{
+  float x_coord = std::cos(theta) * std::sin(phi);
+  float y_coord = std::sin(theta) * std::sin(phi);
+  float z_coord = std::cos(phi);
+  float total_length_of_displacement = radius / 4.0;
+  array<float, 3> axis_of_division{
       total_length_of_displacement *
           (x_coord * x_axis_[kIdx][0] + y_coord * y_axis_[kIdx][0] +
            z_coord * z_axis_[kIdx][0]),
@@ -322,8 +322,8 @@ inline void CellExt<T, TBiologyModuleVariant>::DivideImpl(
   //  1) d2/d1= v2/v1 = volume_ratio (each sphere is shifted inver.
   //  proportionally to its volume)
   //  2) d1 + d2 = TOTAL_LENGTH_OF_DISPLACEMENT
-  double d_2 = total_length_of_displacement / (volume_ratio + 1);
-  double d_1 = total_length_of_displacement - d_2;
+  float d_2 = total_length_of_displacement / (volume_ratio + 1);
+  float d_1 = total_length_of_displacement - d_2;
 
   // B) Instantiating a new sphere = 2nd daughter
   daughter->x_axis_[0] = x_axis_[kIdx];
@@ -336,7 +336,7 @@ inline void CellExt<T, TBiologyModuleVariant>::DivideImpl(
   daughter->UpdateVolume();
 
   // Mass Location
-  array<double, 3> new_mass_location{
+  array<float, 3> new_mass_location{
       mass_location_[kIdx][0] + d_2 * axis_of_division[0],
       mass_location_[kIdx][1] + d_2 * axis_of_division[1],
       mass_location_[kIdx][2] + d_2 * axis_of_division[2]};
@@ -368,10 +368,10 @@ inline void CellExt<T, TBiologyModuleVariant>::DivideImpl(
 }
 
 template <typename T, typename U>
-array<double, 3> CellExt<T, U>::TransformCoordinatesGlobalToPolar(
-    const array<double, 3>& pos) const {
+array<float, 3> CellExt<T, U>::TransformCoordinatesGlobalToPolar(
+    const array<float, 3>& pos) const {
   auto vector_to_point = Matrix::Subtract(pos, mass_location_[kIdx]);
-  array<double, 3> local_cartesian{Matrix::Dot(x_axis_[kIdx], vector_to_point),
+  array<float, 3> local_cartesian{Matrix::Dot(x_axis_[kIdx], vector_to_point),
                                    Matrix::Dot(y_axis_[kIdx], vector_to_point),
                                    Matrix::Dot(z_axis_[kIdx], vector_to_point)};
   return {std::sqrt(local_cartesian[0] * local_cartesian[0] +

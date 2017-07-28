@@ -15,7 +15,7 @@ using nanoflann::KDTreeSingleIndexAdaptor;
 // https://github.com/jlblancoc/nanoflann/blob/master/examples/pointcloud_adaptor_example.cpp
 template <typename Derived>
 struct NanoFlannAdapter {
-  using coord_t = double;
+  using coord_t = float;
 
   const Derived& obj;  //!< A const ref to the data set origin
 
@@ -64,7 +64,7 @@ struct NanoFlannAdapter {
 class NeighborNanoflannOp {
  public:
   NeighborNanoflannOp() {}
-  explicit NeighborNanoflannOp(double distance) : distance_(distance) {}
+  explicit NeighborNanoflannOp(float distance) : distance_(distance) {}
   ~NeighborNanoflannOp() {}
 
   template <typename TContainer>
@@ -73,7 +73,7 @@ class NeighborNanoflannOp {
     const Adapter nf_cells(*cells);  // The adaptor
 
     // construct a 3D kd-tree index:
-    typedef KDTreeSingleIndexAdaptor<L2_Simple_Adaptor<double, Adapter>,
+    typedef KDTreeSingleIndexAdaptor<L2_Simple_Adaptor<float, Adapter>,
                                      Adapter, 3>
         MyKdTree;
 
@@ -81,11 +81,11 @@ class NeighborNanoflannOp {
     MyKdTree index(3, nf_cells, KDTreeSingleIndexAdaptorParams(10));
     index.buildIndex();
 
-    std::vector<std::pair<size_t, double>> ret_matches;
+    std::vector<std::pair<size_t, float>> ret_matches;
     ret_matches.reserve(8);
     nanoflann::SearchParams params;
     params.sorted = false;
-    double search_radius = distance_;
+    float search_radius = distance_;
     InlineVector<int, 8> neighbors;
 
 // calc neighbors
@@ -115,7 +115,7 @@ class NeighborNanoflannOp {
   }
 
  private:
-  double distance_ = 3000;
+  float distance_ = 3000;
 };
 
 }  // namespace bdm

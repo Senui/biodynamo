@@ -29,7 +29,7 @@ using bdm::Grid;
 void Execute(size_t cells_per_dim, size_t iterations, size_t threads,
              size_t repititions, TimingAggregator *statistic,
              bool with_export) {
-  const double space = 20;
+  const float space = 20;
 
   for (size_t r = 0; r < repititions; r++) {
     std::stringstream ss;

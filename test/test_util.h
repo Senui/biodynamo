@@ -14,7 +14,7 @@ struct abs_error {
 
 template <>
 struct abs_error<float> {
-  static constexpr double value = 1e-6;
+  static constexpr float value = 1e-6;
 };
 
 template <>

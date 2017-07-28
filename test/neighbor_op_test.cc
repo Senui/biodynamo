@@ -11,7 +11,7 @@ namespace neighbor_op_test_internal {
 
 template <typename TContainer>
 void CellFactory(TContainer* cells, size_t cells_per_dim) {
-  const double space = 20;
+  const float space = 20;
 
   cells->reserve(cells_per_dim * cells_per_dim * cells_per_dim);
   for (size_t i = 0; i < cells_per_dim; i++) {

@@ -18,29 +18,29 @@ class CellExt : public Base {
   BDM_CLASS_HEADER(CellExt, position_, diameter_);
 
  public:
-  explicit CellExt(const std::array<double, 3>& pos) : position_{{pos}} {}
+  explicit CellExt(const std::array<float, 3>& pos) : position_{{pos}} {}
 
   CellExt() : position_{{1, 2, 3}} {}
 
-  void Divide(Self<Scalar>* daughter, double volume_ratio, double phi,
-              double theta) {
+  void Divide(Self<Scalar>* daughter, float volume_ratio, float phi,
+              float theta) {
     DivideImpl(daughter, volume_ratio, phi, theta);
   }
 
-  virtual void DivideImpl(Self<Scalar>* daughter, double volume_ratio,
-                          double phi, double theta) {
+  virtual void DivideImpl(Self<Scalar>* daughter, float volume_ratio,
+                          float phi, float theta) {
     daughter->position_[kIdx] = {5, 4, 3};
     diameter_[kIdx] = 1.123;
   }
 
-  const std::array<double, 3>& GetPosition() const { return position_[kIdx]; }
-  double GetDiameter() const { return diameter_[kIdx]; }
+  const std::array<float, 3>& GetPosition() const { return position_[kIdx]; }
+  float GetDiameter() const { return diameter_[kIdx]; }
 
-  void SetDiameter(double diameter) { diameter_[kIdx] = diameter; }
+  void SetDiameter(float diameter) { diameter_[kIdx] = diameter; }
 
  protected:
-  vec<std::array<double, 3>> position_;
-  vec<double> diameter_ = {6.28};
+  vec<std::array<float, 3>> position_;
+  vec<float> diameter_ = {6.28};
 };
 
 // -----------------------------------------------------------------------------
@@ -65,7 +65,7 @@ class NeuronExt : public Base {
   NeuronExt() = default;
 
   void DivideImpl(typename CellExt<>::template Self<Scalar>* daughter,
-                  double volume_ratio, double phi, double theta) override {
+                  float volume_ratio, float phi, float theta) override {
     auto neuron = static_cast<Self<Scalar>*>(daughter);
     neuron->neurites_[kIdx].push_back(Neurite(987));
     Base::DivideImpl(daughter, volume_ratio, phi, theta);
@@ -90,7 +90,7 @@ template <typename T>
 void RunDefaultConstructorTest(const T& neuron) {
   EXPECT_EQ(1u, neuron.size());
 
-  EXPECT_EQ(6.28, neuron.GetDiameter());
+  EXPECT_FLOAT_EQ(6.28, neuron.GetDiameter());
   auto& position = neuron.GetPosition();
   EXPECT_EQ(1, position[0]);
   EXPECT_EQ(2, position[1]);
@@ -122,9 +122,9 @@ TEST(SimulationObjectUtilTest, NonDefaultConstructor) {
   neurites.push_back(Neurite(2));
   neurites.push_back(Neurite(3));
 
-  Neuron<> neuron(neurites, std::array<double, 3>{4, 5, 6});
+  Neuron<> neuron(neurites, std::array<float, 3>{4, 5, 6});
 
-  EXPECT_EQ(6.28, neuron.GetDiameter());
+  EXPECT_FLOAT_EQ(6.28, neuron.GetDiameter());
   auto& position = neuron.GetPosition();
   EXPECT_EQ(4, position[0]);
   EXPECT_EQ(5, position[1]);
@@ -141,7 +141,7 @@ TEST(SimulationObjectUtilTest, SoaRef) {
 
   // check if changes are visible for the referenced object
   neurons_ref.SetDiameter(12.34);
-  EXPECT_EQ(12.34, neurons.GetDiameter());
+  EXPECT_FLOAT_EQ(12.34, neurons.GetDiameter());
   neurons_ref.push_back(Neuron<Scalar>());
   EXPECT_EQ(2u, neurons.size());
 }
@@ -151,10 +151,10 @@ TEST(SimulationObjectUtilTest, Soa_push_back_AndSubscriptOperator) {
   neurites.push_back(Neurite(2));
   neurites.push_back(Neurite(3));
 
-  Neuron<> neuron1(neurites, std::array<double, 3>{4, 5, 6});
+  Neuron<> neuron1(neurites, std::array<float, 3>{4, 5, 6});
 
   neurites.push_back(Neurite(4));
-  Neuron<> neuron2(neurites, std::array<double, 3>{9, 8, 7});
+  Neuron<> neuron2(neurites, std::array<float, 3>{9, 8, 7});
 
   auto neurons = Neuron<>::NewEmptySoa();
   neurons.push_back(neuron1);
@@ -162,7 +162,7 @@ TEST(SimulationObjectUtilTest, Soa_push_back_AndSubscriptOperator) {
 
   EXPECT_EQ(2u, neurons.size());
 
-  EXPECT_EQ(6.28, neurons[0].GetDiameter());
+  EXPECT_FLOAT_EQ(6.28, neurons[0].GetDiameter());
   auto& position1 = neurons[0].GetPosition();
   EXPECT_EQ(4, position1[0]);
   EXPECT_EQ(5, position1[1]);
@@ -174,7 +174,7 @@ TEST(SimulationObjectUtilTest, Soa_push_back_AndSubscriptOperator) {
   Neuron<SoaRef>* cast_result = dynamic_cast<Neuron<SoaRef>*>(&element1);
   EXPECT_TRUE(cast_result != nullptr);
 
-  EXPECT_EQ(6.28, neurons[1].GetDiameter());
+  EXPECT_FLOAT_EQ(6.28, neurons[1].GetDiameter());
   auto& position2 = neurons[1].GetPosition();
   EXPECT_EQ(9, position2[0]);
   EXPECT_EQ(8, position2[1]);
@@ -205,10 +205,10 @@ TEST(SimulationObjectUtilTest, Soa_AssignmentOperator) {
   neurites.push_back(Neurite(2));
   neurites.push_back(Neurite(3));
 
-  Neuron<> neuron1(neurites, std::array<double, 3>{4, 5, 6});
+  Neuron<> neuron1(neurites, std::array<float, 3>{4, 5, 6});
 
   neurites.push_back(Neurite(4));
-  Neuron<> new_neuron1(neurites, std::array<double, 3>{9, 8, 7});
+  Neuron<> new_neuron1(neurites, std::array<float, 3>{9, 8, 7});
   new_neuron1.SetDiameter(123);
 
   auto neurons = Neuron<>::NewEmptySoa();
@@ -246,7 +246,7 @@ void RunDivideTest(TContainer* neurons) {
   EXPECT_EQ(5, (*neurons)[1].GetPosition()[0]);
   EXPECT_EQ(4, (*neurons)[1].GetPosition()[1]);
   EXPECT_EQ(3, (*neurons)[1].GetPosition()[2]);
-  EXPECT_EQ(1.123, (*neurons)[0].GetDiameter());
+  EXPECT_FLOAT_EQ(1.123, (*neurons)[0].GetDiameter());
 }
 
 TEST(SimulationObjectUtilTest, Aos_Divide) {

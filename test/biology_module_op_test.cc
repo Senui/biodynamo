@@ -10,9 +10,9 @@ namespace biology_module_op_test_internal {
 using std::size_t;
 
 struct GrowthModule {
-  double growth_rate_;
+  float growth_rate_;
 
-  explicit GrowthModule(double growth_rate) : growth_rate_(growth_rate) {}
+  explicit GrowthModule(float growth_rate) : growth_rate_(growth_rate) {}
 
   template <typename T>
   void Run(T* t) {
@@ -41,8 +41,8 @@ void RunTest(T* cells) {
   op.Compute(cells);
 
   EXPECT_EQ(2u, cells->size());
-  EXPECT_NEAR(14, (*cells)[0].GetDiameter(), abs_error<double>::value);
-  EXPECT_NEAR(37, (*cells)[1].GetDiameter(), abs_error<double>::value);
+  EXPECT_NEAR(14, (*cells)[0].GetDiameter(), abs_error<float>::value);
+  EXPECT_NEAR(37, (*cells)[1].GetDiameter(), abs_error<float>::value);
 }
 
 TEST(BiologyModuleOpTest, ComputeAos) {

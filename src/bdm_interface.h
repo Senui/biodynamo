@@ -14,7 +14,7 @@ namespace bdm {
 class Vector3DInterface {
  public:
   Vector3DInterface() { coord_[0] = coord_[1] = coord_[2] = 0.0; }
-  Vector3DInterface(double x, double y, double z) {
+  Vector3DInterface(float x, float y, float z) {
     coord_[0] = x;
     coord_[1] = y;
     coord_[2] = z;
@@ -26,7 +26,7 @@ class Vector3DInterface {
   }
   ~Vector3DInterface() {}
 
-  double coord_[3];
+  float coord_[3];
 };
 
 class ContinuousInterfaceData {
@@ -44,7 +44,7 @@ class ContinuousInterfaceData {
   }
   ~ContinuousInterfaceData() {}
 
-  std::vector<double> oxygen_level_;
+  std::vector<float> oxygen_level_;
   std::vector<Vector3DInterface> oxygen_level_gradient_;
   std::vector<std::vector<unsigned int>> normoxic_cells_;
   std::vector<std::vector<unsigned int>> hypoxic_cells_;
@@ -55,7 +55,7 @@ class DiscontinuousInterfaceData {
   DiscontinuousInterfaceData() {}
   ~DiscontinuousInterfaceData() {}
 
-  double ecm_density_;
+  float ecm_density_;
   Vector3DInterface ecm_density_gradient_;
 };
 

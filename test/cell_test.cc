@@ -8,7 +8,7 @@ namespace cell_test_internal {
 using mpark::get_if;
 
 struct GrowthModule {
-  double growth_rate_ = 0.5;
+  float growth_rate_ = 0.5;
 
   template <typename T>
   void Run(T* t) {
@@ -19,9 +19,9 @@ struct GrowthModule {
 };
 
 struct MovementModule {
-  std::array<double, 3> velocity_;
+  std::array<float, 3> velocity_;
 
-  explicit MovementModule(const std::array<double, 3>& velocity)
+  explicit MovementModule(const std::array<float, 3>& velocity)
       : velocity_(velocity) {}
 
   template <typename T>
@@ -40,44 +40,44 @@ template <typename Base = CellExt<SimulationObject<Scalar>, BiologyModules>>
 class TestCell : public Base {
  public:
   void TestTransformCoordinatesGlobalToPolar() {
-    array<double, 3> coord = {1, 2, 3};
+    array<float, 3> coord = {1, 2, 3};
     Base::SetMassLocation({9, 8, 7});
     auto result = Base::TransformCoordinatesGlobalToPolar(coord);
 
-    EXPECT_NEAR(10.770329614269007, result[0], abs_error<double>::value);
-    EXPECT_NEAR(1.9513027039072615, result[1], abs_error<double>::value);
-    EXPECT_NEAR(-2.4980915447965089, result[2], abs_error<double>::value);
+    EXPECT_NEAR(10.770329614269007, result[0], abs_error<float>::value);
+    EXPECT_NEAR(1.9513027039072615, result[1], abs_error<float>::value);
+    EXPECT_NEAR(-2.4980915447965089, result[2], abs_error<float>::value);
   }
 
-  void SetXAxis(const array<double, 3>& axis) {
+  void SetXAxis(const array<float, 3>& axis) {
     Base::x_axis_[Base::kIdx] = axis;
   }
-  void SetYAxis(const array<double, 3>& axis) {
+  void SetYAxis(const array<float, 3>& axis) {
     Base::y_axis_[Base::kIdx] = axis;
   }
-  void SetZAxis(const array<double, 3>& axis) {
+  void SetZAxis(const array<float, 3>& axis) {
     Base::z_axis_[Base::kIdx] = axis;
   }
 
-  const array<double, 3>& GetXAxis() { return Base::x_axis_[Base::kIdx]; }
-  const array<double, 3>& GetYAxis() { return Base::y_axis_[Base::kIdx]; }
-  const array<double, 3>& GetZAxis() { return Base::z_axis_[Base::kIdx]; }
+  const array<float, 3>& GetXAxis() { return Base::x_axis_[Base::kIdx]; }
+  const array<float, 3>& GetYAxis() { return Base::y_axis_[Base::kIdx]; }
+  const array<float, 3>& GetZAxis() { return Base::z_axis_[Base::kIdx]; }
 
   const vector<BiologyModules>& GetBiologyModules() const {
     return Base::biology_modules_[0];
   }
 
   bool check_input_parameters_ = false;
-  double expected_volume_ratio_;
-  double expected_phi_;
-  double expected_theta_;
+  float expected_volume_ratio_;
+  float expected_phi_;
+  float expected_theta_;
 
   void DivideImpl(typename Base::template Self<Scalar>* daughter,
-                  double volume_ratio, double phi, double theta) override {
+                  float volume_ratio, float phi, float theta) override {
     if (check_input_parameters_) {
-      EXPECT_NEAR(expected_volume_ratio_, volume_ratio, 1e-8);
-      EXPECT_NEAR(expected_phi_, phi, 1e-8);
-      EXPECT_NEAR(expected_theta_, theta, 1e-8);
+      EXPECT_NEAR(expected_volume_ratio_, volume_ratio, abs_error<float>::value);
+      EXPECT_NEAR(expected_phi_, phi, abs_error<float>::value);
+      EXPECT_NEAR(expected_theta_, theta, abs_error<float>::value);
     } else {
       // forward call to implementation in CellExt
       Base::DivideImpl(daughter, volume_ratio, phi, theta);
@@ -110,7 +110,7 @@ TEST(CellTest, DivideVolumeRatioPhiTheta) {
   TestCell<> daughter;
   mother.Divide(&daughter, 0.75, 0.12, 0.34);
 
-  const double kEpsilon = abs_error<double>::value;
+  const float kEpsilon = abs_error<float>::value;
 
   // verify mother data members
   EXPECT_NEAR(0.16369893089539111, mother.GetPosition()[0], kEpsilon);
@@ -128,7 +128,7 @@ TEST(CellTest, DivideVolumeRatioPhiTheta) {
   EXPECT_NEAR(8.2982653336624335, mother.GetDiameter(), kEpsilon);
   // differs slightly from the value in branch validation due to more precise
   // value of PI
-  EXPECT_NEAR(299.19930034188491, mother.GetVolume(), kEpsilon);
+  EXPECT_FLOAT_EQ(299.19930034188491, mother.GetVolume());
   EXPECT_NEAR(1.1, mother.GetAdherence(), kEpsilon);
   EXPECT_NEAR(2.8571428571428563, mother.GetMass(), kEpsilon);
 
@@ -160,7 +160,7 @@ TEST(CellTest, DivideVolumeRatioPhiTheta) {
   EXPECT_NEAR(7.5394744112915388, daughter.GetDiameter(), kEpsilon);
   // differs slightly from the value in branch validation due to more precise
   // value of PI
-  EXPECT_NEAR(224.39947525641387, daughter.GetVolume(), kEpsilon);
+  EXPECT_FLOAT_EQ(224.39947525641387, daughter.GetVolume());
   EXPECT_NEAR(1.1, daughter.GetAdherence(), kEpsilon);
   EXPECT_NEAR(2.1428571428571437, daughter.GetMass(), kEpsilon);
 
@@ -243,7 +243,7 @@ TEST(CellTest, DivideVolumeRatioAxis) {
 
 TEST(CellTest, BiologyModule) {
   TestCell<> cell;
-  double diameter = cell.GetDiameter();
+  float diameter = cell.GetDiameter();
   auto position = cell.GetPosition();
 
   cell.AddBiologyModule(MovementModule({1, 2, 3}));
@@ -251,10 +251,10 @@ TEST(CellTest, BiologyModule) {
 
   cell.RunBiologyModules();
 
-  EXPECT_NEAR(diameter + 0.5, cell.GetDiameter(), abs_error<double>::value);
-  EXPECT_NEAR(position[0] + 1, cell.GetPosition()[0], abs_error<double>::value);
-  EXPECT_NEAR(position[1] + 2, cell.GetPosition()[1], abs_error<double>::value);
-  EXPECT_NEAR(position[2] + 3, cell.GetPosition()[2], abs_error<double>::value);
+  EXPECT_NEAR(diameter + 0.5, cell.GetDiameter(), abs_error<float>::value);
+  EXPECT_NEAR(position[0] + 1, cell.GetPosition()[0], abs_error<float>::value);
+  EXPECT_NEAR(position[1] + 2, cell.GetPosition()[1], abs_error<float>::value);
+  EXPECT_NEAR(position[2] + 3, cell.GetPosition()[2], abs_error<float>::value);
 }
 
 }  // namespace cell_test_internal

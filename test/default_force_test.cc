@@ -9,22 +9,22 @@ namespace bdm {
 /// overlapping neighbors
 /// implementation uses virual bigger radii to have distant interaction
 TEST(DefaultForce, General) {
-  std::array<double, 3> ref_mass_location = {1.1, 1.0, 0.9};
-  double ref_diameter = 8;
-  double ref_iof_coefficient = 0.15;
-  double nb_diameter = 5;
-  double nb_iof_coefficient = 0.15;
-  std::array<double, 3> nb_mass_location = {0, 0, 0};
-  std::array<double, 3> result;
+  std::array<float, 3> ref_mass_location = {1.1, 1.0, 0.9};
+  float ref_diameter = 8;
+  float ref_iof_coefficient = 0.15;
+  float nb_diameter = 5;
+  float nb_iof_coefficient = 0.15;
+  std::array<float, 3> nb_mass_location = {0, 0, 0};
+  std::array<float, 3> result;
 
   DefaultForce force;
   force.ForceBetweenSpheres(ref_mass_location, ref_diameter,
                             ref_iof_coefficient, nb_mass_location, nb_diameter,
                             nb_iof_coefficient, &result);
 
-  EXPECT_NEAR(7.1429184067241138, result[0], abs_error<double>::value);
-  EXPECT_NEAR(6.4935621879310119, result[1], abs_error<double>::value);
-  EXPECT_NEAR(5.8442059691379109, result[2], abs_error<double>::value);
+  EXPECT_NEAR(7.1429184067241138, result[0], abs_error<float>::value);
+  EXPECT_NEAR(6.4935621879310119, result[1], abs_error<float>::value);
+  EXPECT_NEAR(5.8442059691379109, result[2], abs_error<float>::value);
 
   nb_diameter = 10;
   nb_mass_location = {5, 5, 0};
@@ -32,42 +32,42 @@ TEST(DefaultForce, General) {
                             ref_iof_coefficient, nb_mass_location, nb_diameter,
                             nb_iof_coefficient, &result);
 
-  EXPECT_NEAR(-5.7454658831720176, result[0], abs_error<double>::value);
-  EXPECT_NEAR(-5.892785521202069, result[1], abs_error<double>::value);
-  EXPECT_NEAR(1.3258767422704656, result[2], abs_error<double>::value);
+  EXPECT_NEAR(-5.7454658831720176, result[0], abs_error<float>::value);
+  EXPECT_NEAR(-5.892785521202069, result[1], abs_error<float>::value);
+  EXPECT_NEAR(1.3258767422704656, result[2], abs_error<float>::value);
 }
 
 /// Tests the special case that non of the neighbors overlap
 /// with the reference cell
 TEST(DefaultForce, AllNonOverlapping) {
-  std::array<double, 3> ref_mass_location = {0, 0, 0};
-  double ref_diameter = 8;
-  double ref_iof_coefficient = 0.15;
-  std::array<double, 3> nb_mass_location = {11.01, 0, 0};
-  double nb_diameter = 8;
-  double nb_iof_coefficient = 0.15;
-  std::array<double, 3> result;
+  std::array<float, 3> ref_mass_location = {0, 0, 0};
+  float ref_diameter = 8;
+  float ref_iof_coefficient = 0.15;
+  std::array<float, 3> nb_mass_location = {11.01, 0, 0};
+  float nb_diameter = 8;
+  float nb_iof_coefficient = 0.15;
+  std::array<float, 3> result;
 
   DefaultForce force;
   force.ForceBetweenSpheres(ref_mass_location, ref_diameter,
                             ref_iof_coefficient, nb_mass_location, nb_diameter,
                             nb_iof_coefficient, &result);
 
-  EXPECT_NEAR(0, result[0], abs_error<double>::value);
-  EXPECT_NEAR(0, result[1], abs_error<double>::value);
-  EXPECT_NEAR(0, result[2], abs_error<double>::value);
+  EXPECT_NEAR(0, result[0], abs_error<float>::value);
+  EXPECT_NEAR(0, result[1], abs_error<float>::value);
+  EXPECT_NEAR(0, result[2], abs_error<float>::value);
 }
 
 /// Tests the special case that neighbor and reference cell
 /// are at the same position -> should return random force
 TEST(DefaultForce, AllAtSamePosition) {
-  std::array<double, 3> ref_mass_location = {0, 0, 0};
-  double ref_diameter = 8;
-  double ref_iof_coefficient = 0.15;
-  std::array<double, 3> nb_mass_location = {0, 0, 0};
-  double nb_diameter = 8;
-  double nb_iof_coefficient = 0.15;
-  std::array<double, 3> result;
+  std::array<float, 3> ref_mass_location = {0, 0, 0};
+  float ref_diameter = 8;
+  float ref_iof_coefficient = 0.15;
+  std::array<float, 3> nb_mass_location = {0, 0, 0};
+  float nb_diameter = 8;
+  float nb_iof_coefficient = 0.15;
+  std::array<float, 3> result;
 
   DefaultForce force;
   force.ForceBetweenSpheres(ref_mass_location, ref_diameter,

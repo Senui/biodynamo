@@ -5,7 +5,7 @@
 #include <array>
 #include <iostream>
 
-void Print(const std::array<double, 3>& a) {
+void Print(const std::array<float, 3>& a) {
   std::cout << a[0] << ", " << a[1] << ", " << a[2] << std::endl;
 }
 

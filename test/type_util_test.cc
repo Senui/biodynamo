@@ -7,7 +7,7 @@
 namespace bdm {
 
 TEST(TypeTernaryOperatorTest, True) {
-  type_ternary_operator<true, int, double>::type data;
+  type_ternary_operator<true, int, float>::type data;
   EXPECT_EQ(std::string("i"), typeid(data).name());
 }
 

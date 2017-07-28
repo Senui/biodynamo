@@ -9,7 +9,7 @@
 namespace bdm {
 namespace spatial_organization {
 
-size_t ManualSearchSize(Point *pos, size_t size, double distance) {
+size_t ManualSearchSize(Point *pos, size_t size, float distance) {
   size_t result = 0;
   for (size_t i = 0; i < size; i++) {
     for (size_t j = i + 1; j < size; j++) {
@@ -23,7 +23,7 @@ size_t ManualSearchSize(Point *pos, size_t size, double distance) {
 }
 
 std::vector<std::pair<int, int>> ManualSearch(Point *pos, int size,
-                                              double distance) {
+                                              float distance) {
   std::vector<std::pair<int, int>> result;
   for (int i = 0; i < size; i++) {
     for (int j = i + 1; j < size; j++) {
@@ -38,7 +38,7 @@ std::vector<std::pair<int, int>> ManualSearch(Point *pos, int size,
 
 void SizeTest(SpatialTreeNode<int> *tree, int amount) {
   Point *positions = new Point[amount];
-  double gap = 1.0 / (amount + 1);
+  float gap = 1.0 / (amount + 1);
 
   std::minstd_rand simple_rand;
   simple_rand.seed(42);
@@ -112,7 +112,7 @@ bool IsEqual(std::vector<std::pair<int, int>> a,
 
 bool SearchTest(SpatialTreeNode<int> *tree, int amount) {
   Point *positions = new Point[amount];
-  double gap = 1.0 / (amount + 1);
+  float gap = 1.0 / (amount + 1);
   std::minstd_rand simple_rand;
   simple_rand.seed(42);
 
@@ -124,7 +124,7 @@ bool SearchTest(SpatialTreeNode<int> *tree, int amount) {
     tree->Put(positions[i], i);
   }
 
-  double search_radious = 0.1;
+  float search_radious = 0.1;
   for (int i = 0; i < 2; i++, search_radious /= 10) {
     std::vector<std::pair<int, int>> manual_result =
         ManualSearch(positions, amount, search_radious);

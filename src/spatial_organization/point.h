@@ -11,41 +11,41 @@ namespace spatial_organization {
 class Point {
  public:
   /// Coordinates of the point
-  double x_, y_, z_;
+  float x_, y_, z_;
 
   Point() : x_(0), y_(0), z_(0) {}
 
-  Point(double x, double y, double z) : x_(x), y_(y), z_(z) {}
+  Point(float x, float y, float z) : x_(x), y_(y), z_(z) {}
 
-  double Length() { return sqrt(x_ * x_ + y_ * y_ + z_ * z_); }
+  float Length() { return sqrt(x_ * x_ + y_ * y_ + z_ * z_); }
 
-  void Set(double x, double y, double z) {
+  void Set(float x, float y, float z) {
     this->x_ = x;
     this->y_ = y;
     this->z_ = z;
   }
 
   /// Squared euclidian distance from 'this' to point 'p'
-  double SquaredEuclidianDistance(Point const &p) const {
-    double dx = x_ - p.x_;
-    double dy = y_ - p.y_;
-    double dz = z_ - p.z_;
+  float SquaredEuclidianDistance(Point const &p) const {
+    float dx = x_ - p.x_;
+    float dy = y_ - p.y_;
+    float dz = z_ - p.z_;
 
     return dx * dx + dy * dy + dz * dz;
   }
 
   /// Euclidian distance from 'this' to point 'p'
-  double EuclidianDistance(Point const &p) const {
+  float EuclidianDistance(Point const &p) const {
     return (p + *this * (-1)).Length();
   }
 
   /// Scalar multiplication of the points
-  double operator*(Point const &p) const {
+  float operator*(Point const &p) const {
     return x_ * p.x_ + y_ * p.y_ + z_ * p.z_;
   }
 
   /// Point to scolar multiplication
-  Point operator*(double a) const { return Point(x_ * a, y_ * a, z_ * a); }
+  Point operator*(float a) const { return Point(x_ * a, y_ * a, z_ * a); }
 
   /// Addition of the points
   Point operator+(Point const &b) const {

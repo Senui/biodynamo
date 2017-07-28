@@ -23,7 +23,7 @@ class DisplacementOp {
 
   template <typename TContainer>
   void Compute(TContainer* cells) const {
-    vector<array<double, 3>> cell_movements;
+    vector<array<float, 3>> cell_movements;
     cell_movements.reserve(cells->size());
 #pragma omp parallel for
     for (size_t i = 0; i < cells->size(); i++) {
@@ -48,8 +48,8 @@ class DisplacementOp {
       bool physical_translation = false;
       // bool physical_rotation = false;
 
-      double h = Param::kSimulationTimeStep;
-      std::array<double, 3> movement_at_next_step{0, 0, 0};
+      float h = Param::kSimulationTimeStep;
+      std::array<float, 3> movement_at_next_step{0, 0, 0};
 
       // BIOLOGY :
       // 0) Start with tractor force : What the biology defined as active
@@ -60,9 +60,9 @@ class DisplacementOp {
 
       // PHYSICS
       // the physics force to move the point mass
-      std::array<double, 3> translation_force_on_point_mass{0, 0, 0};
+      std::array<float, 3> translation_force_on_point_mass{0, 0, 0};
       // the physics force to rotate the cell
-      // std::array<double, 3> rotation_force { 0, 0, 0 };
+      // std::array<float, 3> rotation_force { 0, 0, 0 };
 
       // 1) "artificial force" to maintain the sphere in the ecm simulation
       // boundaries--------
@@ -75,7 +75,7 @@ class DisplacementOp {
 
       auto calculate_neighbor_forces = [&](size_t nc) {
         const auto& neighbor = (*cells)[nc];
-        std::array<double, 3> neighbor_force;
+        std::array<float, 3> neighbor_force;
         neighbor.GetForceOn(cell.GetMassLocation(), cell.GetDiameter(),
                             &neighbor_force);
         translation_force_on_point_mass[0] += neighbor_force[0];
@@ -90,7 +90,7 @@ class DisplacementOp {
 
       // 4) PhysicalBonds
       // How the physics influences the next displacement
-      double norm_of_force = std::sqrt(translation_force_on_point_mass[0] *
+      float norm_of_force = std::sqrt(translation_force_on_point_mass[0] *
                                            translation_force_on_point_mass[0] +
                                        translation_force_on_point_mass[1] *
                                            translation_force_on_point_mass[1] +
@@ -102,7 +102,7 @@ class DisplacementOp {
       //  - break adherence and make us translate ?
       physical_translation = norm_of_force > cell.GetAdherence();
 
-      double mh = h / cell.GetMass();
+      float mh = h / cell.GetMass();
       // adding the physics translation (scale by weight) if important enough
       if (physical_translation) {
         // We scale the move with mass and time step
