@@ -13,7 +13,7 @@
 #include "inline_vector.h"
 #include "math_util.h"
 #include "matrix.h"
-#include "param.h"
+#include "bdm_param.h"
 #include "simulation_object.h"
 #include "simulation_object_util.h"
 
@@ -29,7 +29,7 @@ class CellExt : public Base {
   BDM_CLASS_HEADER_ADV(CellExt,
                        CellExt<typename Base::template Self<TTBackend> COMMA()
                                    TBiologyModuleVariant>,
-                       template <typename COMMA() typename>, position_,
+                       template <typename COMMA() typename>, position_, gpu_position_,
                        mass_location_, tractor_force_, diameter_, volume_,
                        adherence_, density_, x_axis_, y_axis_, z_axis_,
                        neighbors_, biology_modules_);
@@ -130,6 +130,8 @@ class CellExt : public Base {
 
   vec<array<float, 3>>& GetAllPositions() { return position_; }
 
+  float* GetGpuPositions() { return &((gpu_position_.data())[0][0]); }
+
   const array<float, 3>& GetTractorForce() const {
     return tractor_force_[kIdx];
   }
@@ -148,6 +150,10 @@ class CellExt : public Base {
   void SetMass(float mass) { density_[kIdx] = mass / volume_[kIdx]; }
 
   void SetDensity(float density) { density_[kIdx] = density; }
+
+  void SetGpuPosition(const array<float, 4>& gpu_position) {
+    gpu_position_[kIdx] = gpu_position;
+  }
 
   void SetMassLocation(const array<float, 3>& mass_location) {
     mass_location_[kIdx] = mass_location;
@@ -211,6 +217,7 @@ class CellExt : public Base {
       const array<float, 3>& coord) const;
 
   vec<array<float, 3>> position_;
+  vec<array<float, 4>> gpu_position_;
   vec<array<float, 3>> mass_location_;
   vec<array<float, 3>> tractor_force_;
   vec<float> diameter_;

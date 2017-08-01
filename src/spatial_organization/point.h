@@ -2,7 +2,7 @@
 #define SPATIAL_ORGANIZATION_POINT_H_
 
 #include <cmath>
-#include "param.h"
+#include "bdm_param.h"
 
 namespace bdm {
 namespace spatial_organization {

@@ -8,7 +8,7 @@
 #include <vector>
 #include "cell.h"
 #include "inline_vector.h"
-#include "param.h"
+#include "bdm_param.h"
 
 namespace bdm {
 

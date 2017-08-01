@@ -27,6 +27,7 @@ if (test)
 endif()
 find_package(Git)
 #find_package(ROOT REQUIRED COMPONENTS Eve Geom Gui)
+find_package(CUDA QUIET REQUIRED)
 
 find_package(ClangTools)
 if ("$ENV{CMAKE_EXPORT_COMPILE_COMMANDS}" STREQUAL "1" OR CLANG_TIDY_FOUND)
@@ -129,6 +130,7 @@ include_directories("${MPARK_LIB}")
 #    simulation/ecm.h
 #    LINKDEF bdmLinkDef.h)
 
+file(GLOB_RECURSE KERNELS "${CMAKE_SOURCE_DIR}/src/*.cu")
 file(GLOB_RECURSE SOURCES "${CMAKE_SOURCE_DIR}/src/*.cc")
 file(GLOB_RECURSE HEADERS "${CMAKE_SOURCE_DIR}/src/*.h")
 #${CMAKE_BINARY_DIR}/bdmDict.cxx)
@@ -143,6 +145,21 @@ add_custom_target(libbdmclean COMMAND ${CMAKE_COMMAND} -P "${CMAKE_BINARY_DIR}/C
 # custom clean target for biodynamo that excludes ExternalProjects
 add_custom_target(bdmclean)
 add_dependencies(bdmclean libbdmclean)
+
+#--------------------- Setup CUDA -----------------------
+# Location of the CUDA Toolkit binaries and libraries
+set(CUDA_PATH "/usr/local/cuda-8.0")
+set(CUDA_INC_PATH "${CUDA_PATH}/include")
+set(CUDA_BIN_PATH "${CUDA_PATH}/bin")
+set(CUDA_HELPER_PATH "${CUDA_PATH}/samples/common/inc")
+set(CUDA_LIB_PATH "${CUDA_PATH}/lib64")
+cuda_include_directories(${CUDA_INC_PATH} ${CUDA_HELPER_PATH})
+include_directories(${CUDA_INC_PATH} ${CUDA_HELPER_PATH})
+
+link_directories(${CUDA_PATH}/common/lib/linux/x86_64 ${CUDA_LIB_PATH})
+
+message(WARNING ${NVCC})
+cuda_add_library(cudalibs ${KERNELS} OPTIONS -arch sm_50)
 
 # -------------------- build test project runBiodynamoTests ----------------------
 # http://www.kaizou.org/2014/11/gtest-cmake/
@@ -233,7 +250,7 @@ target_link_libraries(${SIMULATION_TARGET} biodynamo)
 # --------------------- build cell_division_module executable ------------------
 set(SIMULATION_TARGET cell_division_module)
 add_executable(${SIMULATION_TARGET} ${CMAKE_SOURCE_DIR}/demo/cell_division_module.cc)
-target_link_libraries(${SIMULATION_TARGET} biodynamo)
+target_link_libraries(${SIMULATION_TARGET} biodynamo cudalibs cudart cufft)
 
 
 set(SIMULATION_TARGET grid)

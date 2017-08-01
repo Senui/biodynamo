@@ -30,7 +30,7 @@ typedef variant<GrowthModule> BiologyModules;
 template <typename Backend = Scalar>
 using MyCell = Cell<Backend, BiologyModules>;
 
-void Simulate(size_t cells_per_dim = 128) {
+void Simulate(size_t cells_per_dim = 8) {
   // 4. Get cell container
   auto cells = ResourceManager<MyCell<Soa>>::Get()->GetCells();
   cells->reserve(cells_per_dim * cells_per_dim * cells_per_dim);
@@ -41,6 +41,7 @@ void Simulate(size_t cells_per_dim = 128) {
     for (size_t j = 0; j < cells_per_dim; j++) {
       for (size_t k = 0; k < cells_per_dim; k++) {
         MyCell<Scalar> cell({k * space, j * space, i * space});
+        cell.SetGpuPosition({k * space, j * space, i * space, 1.0f});
         cell.SetDiameter(30);
         cell.SetAdherence(0.4);
         cell.SetMass(1.0);
