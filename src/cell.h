@@ -23,8 +23,7 @@ using std::vector;
 
 BDM_SIM_CLASS(Cell, SimulationObject) {
   BDM_CLASS_HEADER(CellExt, 1, position_, tractor_force_, diameter_, volume_,
-                   adherence_, density_, x_axis_, y_axis_, z_axis_,
-                   biology_modules_, box_idx_);
+                   adherence_, density_, biology_modules_, box_idx_);
 
  public:
   using TBiologyModuleVariant = typename TCompileTimeParam::BiologyModules;
@@ -199,11 +198,11 @@ BDM_SIM_CLASS(Cell, SimulationObject) {
   vec<double> density_;
 
   /// First axis of the local coordinate system.
-  vec<array<double, 3>> x_axis_ = {array<double, 3>{1.0, 0.0, 0.0}};
+  static constexpr array<double, 3> kXAxis = {{1.0, 0.0, 0.0}};
   /// Second axis of the local coordinate system.
-  vec<array<double, 3>> y_axis_ = {array<double, 3>{0.0, 1.0, 0.0}};
+  static constexpr array<double, 3> kYAxis = {{0.0, 1.0, 0.0}};
   /// Third axis of the local coordinate system.
-  vec<array<double, 3>> z_axis_ = {array<double, 3>{0.0, 0.0, 1.0}};
+  static constexpr array<double, 3> kZAxis = {{0.0, 0.0, 1.0}};
 
   /// collection of biology modules which define the internal behavior
   vec<vector<TBiologyModuleVariant>> biology_modules_;
@@ -214,6 +213,13 @@ BDM_SIM_CLASS(Cell, SimulationObject) {
 
 // ----------------------------------------------------------------------------
 // Implementation -------------------------------------------------------------
+template <typename T, template <typename> class U>
+constexpr array<double, 3> CellExt<T, U>::kXAxis;
+template <typename T, template <typename> class U>
+constexpr array<double, 3> CellExt<T, U>::kYAxis;
+template <typename T, template <typename> class U>
+constexpr array<double, 3> CellExt<T, U>::kZAxis;
+
 template <typename T, template <typename> class U>
 template <typename TBiologyModule>
 inline void CellExt<T, U>::AddBiologyModule(TBiologyModule&& module) {
@@ -285,14 +291,11 @@ inline void CellExt<T, U>::DivideImpl(Self<Scalar>* daughter,
   double total_length_of_displacement = radius / 4.0;
   array<double, 3> axis_of_division{
       total_length_of_displacement *
-          (x_coord * x_axis_[kIdx][0] + y_coord * y_axis_[kIdx][0] +
-           z_coord * z_axis_[kIdx][0]),
+          (x_coord * kXAxis[0] + y_coord * kYAxis[0] + z_coord * kZAxis[0]),
       total_length_of_displacement *
-          (x_coord * x_axis_[kIdx][1] + y_coord * y_axis_[kIdx][1] +
-           z_coord * z_axis_[kIdx][1]),
+          (x_coord * kXAxis[1] + y_coord * kYAxis[1] + z_coord * kZAxis[1]),
       total_length_of_displacement *
-          (x_coord * x_axis_[kIdx][2] + y_coord * y_axis_[kIdx][2] +
-           z_coord * z_axis_[kIdx][2])};
+          (x_coord * kXAxis[2] + y_coord * kYAxis[2] + z_coord * kZAxis[2])};
 
   // two equations for the center displacement :
   //  1) d2/d1= v2/v1 = volume_ratio (each sphere is shifted inver.
@@ -302,9 +305,6 @@ inline void CellExt<T, U>::DivideImpl(Self<Scalar>* daughter,
   double d_1 = total_length_of_displacement - d_2;
 
   // B) Instantiating a new sphere = 2nd daughter
-  daughter->x_axis_[0] = x_axis_[kIdx];
-  daughter->y_axis_[0] = y_axis_[kIdx];
-  daughter->z_axis_[0] = z_axis_[kIdx];
   daughter->adherence_[0] = adherence_[kIdx];
   daughter->density_[0] = density_[kIdx];
 
@@ -342,9 +342,9 @@ template <typename T, template <typename> class U>
 array<double, 3> CellExt<T, U>::TransformCoordinatesGlobalToPolar(
     const array<double, 3>& pos) const {
   auto vector_to_point = Matrix::Subtract(pos, position_[kIdx]);
-  array<double, 3> local_cartesian{Matrix::Dot(x_axis_[kIdx], vector_to_point),
-                                   Matrix::Dot(y_axis_[kIdx], vector_to_point),
-                                   Matrix::Dot(z_axis_[kIdx], vector_to_point)};
+  array<double, 3> local_cartesian{Matrix::Dot(kXAxis, vector_to_point),
+                                   Matrix::Dot(kYAxis, vector_to_point),
+                                   Matrix::Dot(kZAxis, vector_to_point)};
   return {std::sqrt(local_cartesian[0] * local_cartesian[0] +
                     local_cartesian[1] * local_cartesian[1] +
                     local_cartesian[2] * local_cartesian[2]),
