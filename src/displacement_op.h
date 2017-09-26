@@ -80,7 +80,7 @@ class DisplacementOp {
       auto calculate_neighbor_forces = [&](auto&& neighbor,
                                            auto&& neighbor_handle) {
         std::array<double, 3> neighbor_force;
-        neighbor.GetForceOn(cell.GetMassLocation(), cell.GetDiameter(),
+        neighbor.GetForceOn(cell.GetPosition(), cell.GetDiameter(),
                             &neighbor_force);
         translation_force_on_point_mass[0] += neighbor_force[0];
         translation_force_on_point_mass[1] += neighbor_force[1];
@@ -135,8 +135,7 @@ class DisplacementOp {
 #pragma omp parallel for
     for (size_t i = 0; i < cells->size(); i++) {
       auto&& cell = (*cells)[i];
-      cell.UpdateMassLocation(cell_movements[i]);
-      cell.SetPosition(cell.GetMassLocation());
+      cell.UpdatePosition(cell_movements[i]);
 
       // Reset biological movement to 0.
       cell.SetTractorForce({0, 0, 0});

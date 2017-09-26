@@ -22,16 +22,15 @@ using std::array;
 using std::vector;
 
 BDM_SIM_CLASS(Cell, SimulationObject) {
-  BDM_CLASS_HEADER(CellExt, 1, position_, mass_location_, tractor_force_,
-                   diameter_, volume_, adherence_, density_, x_axis_, y_axis_,
-                   z_axis_, biology_modules_, box_idx_);
+  BDM_CLASS_HEADER(CellExt, 1, position_, tractor_force_, diameter_, volume_,
+                   adherence_, density_, x_axis_, y_axis_, z_axis_,
+                   biology_modules_, box_idx_);
 
  public:
   using TBiologyModuleVariant = typename TCompileTimeParam::BiologyModules;
   CellExt() {}
   explicit CellExt(double diameter) : diameter_(diameter) { UpdateVolume(); }
-  explicit CellExt(const array<double, 3>& position)
-      : position_(position), mass_location_(position) {}
+  explicit CellExt(const array<double, 3>& position) : position_(position) {}
 
   virtual ~CellExt() {}
 
@@ -113,10 +112,6 @@ BDM_SIM_CLASS(Cell, SimulationObject) {
 
   double GetDensity() const { return density_[kIdx]; }
 
-  const array<double, 3>& GetMassLocation() const {
-    return mass_location_[kIdx];
-  }
-
   const array<double, 3>& GetPosition() const { return position_[kIdx]; }
 
   double* GetPositionPtr() { return &(position_[0][0]); }
@@ -138,10 +133,6 @@ BDM_SIM_CLASS(Cell, SimulationObject) {
   void SetMass(double mass) { density_[kIdx] = mass / volume_[kIdx]; }
 
   void SetDensity(double density) { density_[kIdx] = density; }
-
-  void SetMassLocation(const array<double, 3>& mass_location) {
-    mass_location_[kIdx] = mass_location;
-  }
 
   void SetPosition(const array<double, 3>& position) {
     position_[kIdx] = position;
@@ -171,10 +162,10 @@ BDM_SIM_CLASS(Cell, SimulationObject) {
     volume_[kIdx] = Math::kPi / 6 * std::pow(diameter_[kIdx], 3);
   }
 
-  void UpdateMassLocation(const array<double, 3>& delta) {
-    mass_location_[kIdx][0] += delta[0];
-    mass_location_[kIdx][1] += delta[1];
-    mass_location_[kIdx][2] += delta[2];
+  void UpdatePosition(const array<double, 3>& delta) {
+    position_[kIdx][0] += delta[0];
+    position_[kIdx][1] += delta[1];
+    position_[kIdx][2] += delta[2];
   }
 
   void GetForceOn(const array<double, 3>& ref_mass_location,
@@ -183,7 +174,7 @@ BDM_SIM_CLASS(Cell, SimulationObject) {
     double iof_coefficient = Param::kSphereDefaultInterObjectCoefficient;
 
     default_force.ForceBetweenSpheres(ref_mass_location, ref_diameter,
-                                      iof_coefficient, mass_location_[kIdx],
+                                      iof_coefficient, position_[kIdx],
                                       diameter_[kIdx], iof_coefficient, force);
   }
 
@@ -201,7 +192,6 @@ BDM_SIM_CLASS(Cell, SimulationObject) {
       const array<double, 3>& coord) const;
 
   vec<array<double, 3>> position_;
-  vec<array<double, 3>> mass_location_;
   vec<array<double, 3>> tractor_force_;
   vec<double> diameter_;
   vec<double> volume_;
@@ -255,8 +245,8 @@ inline void CellExt<T, U>::Divide(Self<Scalar>* daughter, double volume_ratio) {
 template <typename T, template <typename> class U>
 inline void CellExt<T, U>::Divide(Self<Scalar>* daughter,
                                   const array<double, 3>& axis) {
-  auto polarcoord = TransformCoordinatesGlobalToPolar(
-      Matrix::Add(axis, mass_location_[kIdx]));
+  auto polarcoord =
+      TransformCoordinatesGlobalToPolar(Matrix::Add(axis, position_[kIdx]));
   DivideImpl(daughter, 0.9 + 0.2 * gRandom.NextDouble(), polarcoord[1],
              polarcoord[2]);
 }
@@ -264,8 +254,8 @@ inline void CellExt<T, U>::Divide(Self<Scalar>* daughter,
 template <typename T, template <typename> class U>
 inline void CellExt<T, U>::Divide(Self<Scalar>* daughter, double volume_ratio,
                                   const array<double, 3>& axis) {
-  auto polarcoord = TransformCoordinatesGlobalToPolar(
-      Matrix::Add(axis, mass_location_[kIdx]));
+  auto polarcoord =
+      TransformCoordinatesGlobalToPolar(Matrix::Add(axis, position_[kIdx]));
   DivideImpl(daughter, volume_ratio, polarcoord[1], polarcoord[2]);
 }
 
@@ -321,15 +311,11 @@ inline void CellExt<T, U>::DivideImpl(Self<Scalar>* daughter,
   daughter->diameter_[0] = r2 * 2;
   daughter->UpdateVolume();
 
-  // Mass Location
-  array<double, 3> new_mass_location{
-      mass_location_[kIdx][0] + d_2 * axis_of_division[0],
-      mass_location_[kIdx][1] + d_2 * axis_of_division[1],
-      mass_location_[kIdx][2] + d_2 * axis_of_division[2]};
-  daughter->mass_location_[0] = new_mass_location;
-  daughter->position_[0][0] = daughter->mass_location_[0][0];
-  daughter->position_[0][1] = daughter->mass_location_[0][1];
-  daughter->position_[0][2] = daughter->mass_location_[0][2];
+  // position
+  array<double, 3> new_position{position_[kIdx][0] + d_2 * axis_of_division[0],
+                                position_[kIdx][1] + d_2 * axis_of_division[1],
+                                position_[kIdx][2] + d_2 * axis_of_division[2]};
+  daughter->position_[0] = new_position;
 
   CopyVisitor<vector<TBiologyModuleVariant>> visitor(
       Event::kCellDivision, &(daughter->biology_modules_[0]));
@@ -342,9 +328,6 @@ inline void CellExt<T, U>::DivideImpl(Self<Scalar>* daughter,
   position_[kIdx][0] -= d_1 * axis_of_division[0];
   position_[kIdx][1] -= d_1 * axis_of_division[1];
   position_[kIdx][2] -= d_1 * axis_of_division[2];
-  mass_location_[kIdx][0] = position_[kIdx][0];
-  mass_location_[kIdx][1] = position_[kIdx][1];
-  mass_location_[kIdx][2] = position_[kIdx][2];
 
   // F) change properties of this cell
   diameter_[kIdx] = r1 * 2;
@@ -358,7 +341,7 @@ inline void CellExt<T, U>::DivideImpl(Self<Scalar>* daughter,
 template <typename T, template <typename> class U>
 array<double, 3> CellExt<T, U>::TransformCoordinatesGlobalToPolar(
     const array<double, 3>& pos) const {
-  auto vector_to_point = Matrix::Subtract(pos, mass_location_[kIdx]);
+  auto vector_to_point = Matrix::Subtract(pos, position_[kIdx]);
   array<double, 3> local_cartesian{Matrix::Dot(x_axis_[kIdx], vector_to_point),
                                    Matrix::Dot(y_axis_[kIdx], vector_to_point),
                                    Matrix::Dot(z_axis_[kIdx], vector_to_point)};
