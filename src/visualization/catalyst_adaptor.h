@@ -44,24 +44,24 @@ class CatalystAdaptor {
   ///
   template <typename TContainer>
   void BuildVTKGrid(TContainer* sim_objects) {
-    // create the points information
-    vtkNew<vtkDoubleArray> position_array;
-    vtkDoubleArray* diameter_array = vtkDoubleArray::New();
-    diameter_array->SetName("Diameter");
-
-    position_array->SetNumberOfComponents(3);
-    position_array->SetArray(sim_objects->GetPositionPtr(),
-                             static_cast<vtkIdType>(sim_objects->size() * 3),
-                             1);
-    diameter_array->SetArray(sim_objects->GetDiameterPtr(),
-                             static_cast<vtkIdType>(sim_objects->size()), 1);
-
-    vtkNew<vtkPoints> points;
-
-    points->SetData(position_array.GetPointer());
-
-    g_vtk_grid_->SetPoints(points.GetPointer());
-    g_vtk_grid_->GetPointData()->AddArray(diameter_array);
+    // // create the points information
+    // vtkNew<vtkDoubleArray> position_array;
+    // vtkDoubleArray* diameter_array = vtkDoubleArray::New();
+    // diameter_array->SetName("Diameter");
+    //
+    // position_array->SetNumberOfComponents(3);
+    // position_array->SetArray(sim_objects->GetPositionPtr(),
+    //                          static_cast<vtkIdType>(sim_objects->size() * 3),
+    //                          1);
+    // diameter_array->SetArray(sim_objects->GetDiameterPtr(),
+    //                          static_cast<vtkIdType>(sim_objects->size()), 1);
+    //
+    // vtkNew<vtkPoints> points;
+    //
+    // points->SetData(position_array.GetPointer());
+    //
+    // g_vtk_grid_->SetPoints(points.GetPointer());
+    // g_vtk_grid_->GetPointData()->AddArray(diameter_array);
   }
 
   ///

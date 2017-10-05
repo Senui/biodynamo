@@ -151,8 +151,10 @@ if (test)
 
   # unit tests
   #   main test executable
-  file(GLOB TEST_SOURCES ${CMAKE_SOURCE_DIR}/test/unit/*.cc)
-  file(GLOB TEST_HEADERS ${CMAKE_SOURCE_DIR}/test/unit/*.h)
+  file(GLOB TEST_SOURCES ${CMAKE_SOURCE_DIR}/test/unit/*.cc
+                         ${CMAKE_SOURCE_DIR}/test/unit/neuroscience/*.cc)
+  file(GLOB TEST_HEADERS ${CMAKE_SOURCE_DIR}/test/unit/*.h
+                         ${CMAKE_SOURCE_DIR}/test/unit/neuroscience/*.h)
   bdm_add_test_executable(runBiodynamoTestsMain
                           SOURCES ${TEST_SOURCES}
                           HEADERS ${TEST_HEADERS})

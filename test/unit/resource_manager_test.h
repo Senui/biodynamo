@@ -153,7 +153,7 @@ inline void RunIOAosTest() {
   RunIOTest<Scalar, ASoa, BSoa>();
 }
 
-inline void RunSoaTest() {
+inline void RunIOSoaTest() {
   RunIOTest<Soa, AScalar, BScalar>();
   RunIOTest<Soa, ASoa, BSoa>();
 }
