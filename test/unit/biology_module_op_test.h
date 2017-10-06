@@ -34,6 +34,7 @@ struct CTParam {
   using Self = CTParam<TTBackend>;
   using Backend = TBackend;
   using BiologyModules = Variant<GrowthModule>;
+  using SimulationBackend = Soa;
 };
 
 template <typename T>
