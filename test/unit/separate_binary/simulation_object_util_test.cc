@@ -256,6 +256,7 @@ void RunSoPointerTest(T* sim_objects) {
 
 BDM_SIM_CLASS(SoPointerTestClass, SimulationObject) {
   BDM_CLASS_HEADER(SoPointerTestClassExt, 1, id_);
+
  public:
   SoPointerTestClassExt() {}
   SoPointerTestClassExt(uint64_t id) { id_[kIdx] = id; }
