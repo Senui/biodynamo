@@ -8,19 +8,25 @@
 namespace bdm {
 
 BDM_SIM_CLASS(Neuron, Cell) {
-  BDM_CLASS_HEADER(NeuronExt, 1, daughters_, foo_);
+  BDM_CLASS_HEADER(NeuronExt, 1, daughters_, foo_, aa_);
 
  public:
   using SimBackend = typename TCompileTimeParam::SimulationBackend;
   using TNeurite = typename TCompileTimeParam::TNeurite;
 
-  NeuronExt() { std::cout << typeid(MostDerived).name() << std::endl; }
+  NeuronExt() {
+    std::cout << typeid(MostDerived).name() << std::endl;
+    std::cout << "   Neurite Soa " << typeid(typename TNeurite::template Self<Soa>).name() << std::endl;
+    std::cout << "   Neurite Sca " << typeid(typename TNeurite::template Self<Scalar>).name() << std::endl;
+  }
 
  private:
   // vec<SoPointer<typename ToBackend<TNeurite, SimBackend>::type, SimBackend>>
   // daughters_;
   vec<SoPointer<TNeurite, SimBackend>> daughters_;
   // TNeurite* bar_;
+
+  vec<SoPointer<typename TNeurite::template Self<Scalar>, SimBackend>> aa_;
 
   // vec<SoPointer<TNeuron<SimBackend>, SimBackend>> foo_;
   vec<SoPointer<MostDerived, SimBackend>> foo_;

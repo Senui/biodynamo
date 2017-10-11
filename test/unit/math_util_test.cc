@@ -37,4 +37,37 @@ TEST(MathUtilTest, Normalize) {
   EXPECT_NEAR(0.1948051948051948052, result[2], abs_error<double>::value);
 }
 
+TEST(MathUtilTest, CrossProduct) {
+  std::array<double, 3> a = {1.1, 2.2, 3.3};
+  std::array<double, 3> b = {5.8, 7.3, 11.87};
+
+  auto&& result = Math::CrossProduct(a, b);
+  EXPECT_ARR_NEAR(result, {2.024, 6.083, -4.73});
+}
+
+TEST(MathUtilTest, RotAroundAxis) {
+  std::array<double, 3> axis = {1.0,1.0,0.0};
+  std::array<double, 3> vector = {4,5,6};
+  double theta = Math::kPi;
+
+  auto&& result = Math::RotAroundAxis(vector, theta, axis);
+  EXPECT_ARR_NEAR(result, {0.5,-0.5, -6});
+}
+
+TEST(MathUtilTest, Perp3) {
+  std::array<double, 3> vector = {4,5,6};
+  double random = 1.1234;
+
+  auto&& result = Math::Perp3(vector, random);
+  EXPECT_ARR_NEAR(result, {0.086162044419162448, -0.057217207991650247, -0.0097603562863997576});
+}
+
+TEST(MathUtilTest, AngleRadian) {
+  std::array<double, 3> a = {1,2,3};
+  std::array<double, 3> b = {9,8,7};
+
+  double result = Math::AngleRadian(a, b);
+  EXPECT_NEAR(1.5538588453980886, result, abs_error<double>::value);
+}
+
 }  // namespace bdm
