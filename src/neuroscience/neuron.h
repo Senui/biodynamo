@@ -42,7 +42,7 @@ BDM_SIM_CLASS(SpecializedNeuron, Neuron) {
 
  public:
   SpecializedNeuronExt() {
-    auto&& me = me_[kIdx].Get();
+    // auto&& me = me_[kIdx].Get();
   }
 
  private:
