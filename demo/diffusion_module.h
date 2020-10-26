@@ -269,7 +269,7 @@ inline int Simulate(int argc, const char** argv) {
   // 4. Run simulation for N timesteps
   Scheduler<> scheduler;
 
-  scheduler.Simulate(5001);
+  scheduler.Simulate(2001);
 
   float spatial_range = 5;
   auto crit = GetCriterion(spatial_range, num_cells / 8);

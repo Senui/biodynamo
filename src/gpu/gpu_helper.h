@@ -7,11 +7,11 @@
 #include <vector>
 
 #ifdef USE_OPENCL
-#define __CL_ENABLE_EXCEPTIONS
+#define CL_HPP_ENABLE_EXCEPTIONS
 #ifdef __APPLE__
-#include <OpenCL/cl.hpp>
+#include <OpenCL/cl2.hpp>
 #else
-#include <CL/cl.hpp>
+#include <CL/cl2.hpp>
 #endif
 #endif
 
@@ -79,10 +79,7 @@ static void CompileOpenCLKernels() {
   std::stringstream buffer;
   buffer << cl_file.rdbuf();
 
-  cl::Program displacement_op_program(
-      *context,
-      cl::Program::Sources(1, std::make_pair(buffer.str().c_str(),
-                                             strlen(buffer.str().c_str()))));
+  cl::Program displacement_op_program(*context, buffer.str());
 
   all_programs->push_back(displacement_op_program);
 
