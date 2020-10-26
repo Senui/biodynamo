@@ -37,6 +37,7 @@ bool Param::statistics_ = false;
 bool Param::python_catalyst_pipeline_ = false;
 
 // experimental group
+bool Param::heterogeneous_ = false;
 bool Param::use_gpu_ = false;
 bool Param::use_opencl_ = false;
 bool Param::opencl_debug_ = false;
@@ -151,6 +152,7 @@ void Param::AssignFromConfig(const std::shared_ptr<cpptoml::table>& config) {
                           "development.simulation_step_freq");
 
   // experimental group
+  BDM_ASSIGN_CONFIG_VALUE(heterogeneous_, "experimental.heterogeneous");
   BDM_ASSIGN_CONFIG_VALUE(use_gpu_, "experimental.use_gpu");
   BDM_ASSIGN_CONFIG_VALUE(use_opencl_, "experimental.use_opencl");
   BDM_ASSIGN_CONFIG_VALUE(opencl_debug_, "experimental.opencl_debug");
@@ -188,6 +190,7 @@ void Param::Reset() {
   simulation_step_freq_ = 10;
 
   // experimental group
+  heterogeneous_ = false;
   use_gpu_ = false;
   use_opencl_ = false;
   opencl_debug_ = false;

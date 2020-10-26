@@ -268,6 +268,7 @@ struct Param {
   ///     [experimental]
   ///     use_opencl = false
   static bool use_opencl_;
+  static bool heterogeneous_;
 
   /// Compile OpenCL kernels with debugging symbols, for debugging on CPU
   /// targets with GNU gdb.

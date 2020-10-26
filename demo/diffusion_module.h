@@ -1,106 +1,281 @@
-#ifndef DEMO_DIFFUSION_MODULE_H_
-#define DEMO_DIFFUSION_MODULE_H_
+#ifndef INTEGRATION_SOMA_CLUSTERING_H_
+#define INTEGRATION_SOMA_CLUSTERING_H_
 
 #include <vector>
 
 #include "biodynamo.h"
+#include "math_util.h"
 
 namespace bdm {
 
 // -----------------------------------------------------------------------------
-// This model creates 8 cells at each corner of a cube. A substance is
-// artificially added in the middle of this cube. The cells are modeled to
-// displace according to the extracellular gradient; in this case to the middle.
+// This model examplifies the use of extracellur diffusion and shows
+// how to extend the default "Cell". In step 0 one can see how an extra
+// data member is added and can be accessed throughout the simulation with
+// its Get and Set methods. N cells are randomly positioned in space, of which
+// half are of type 1 and half of type -1.
+//
+// Each type secretes a different substance. Cells move towards the gradient of
+// their own substance, which results in clusters being formed of cells of the
+// same type.
 // -----------------------------------------------------------------------------
 
-// List the extracellular substances
-enum Substances { kKalium };
+// 0. Define my custom cell, which extends Cell by adding an extra
+// data member cell_type.
+BDM_SIM_OBJECT(MyCell, bdm::Cell) {
+  BDM_SIM_OBJECT_HEADER(MyCellExt, 1, cell_type_);
+
+ public:
+  MyCellExt() {}
+  // TODO(ahmad): this needs to be explicitely stated, otherwise empty
+  // implementation
+  MyCellExt(const std::array<float, 3>& position) : Base(position) {}
+
+  void SetCellType(int t) { cell_type_[kIdx] = t; }
+  int GetCellType() const { return cell_type_[kIdx]; }
+
+ private:
+  vec<int> cell_type_;
+};
+
+enum Substances { kSubstance_0, kSubstance_1 };
 
 // 1a. Define displacement behavior:
 // Cells move along the diffusion gradient (from low concentration to high)
 struct Chemotaxis : public BaseBiologyModule {
+  // Daughter cells inherit this biology module
   Chemotaxis() : BaseBiologyModule(gAllBmEvents) {}
 
   template <typename T>
   void Run(T* cell) {
-    static auto dg = GetDiffusionGrid(kKalium);
-    dg->SetConcentrationThreshold(1e15);
+    if (!init_) {
+      dg_0_ = GetDiffusionGrid(kSubstance_0);
+      dg_1_ = GetDiffusionGrid(kSubstance_1);
+      init_ = true;
+    }
 
     auto& position = cell->GetPosition();
-    std::array<float, 3> gradient;
-    dg->GetGradient(position, &gradient);
-    gradient[0] *= 0.5;
-    gradient[1] *= 0.5;
-    gradient[2] *= 0.5;
+    std::array<float, 3> diff_gradient;
 
-    cell->UpdatePosition(gradient);
+    if (cell->GetCellType() == 1) {
+      dg_1_->GetGradient(position, &gradient_1_);
+      diff_gradient = Math::ScalarMult(5, gradient_1_);
+    } else {
+      dg_0_->GetGradient(position, &gradient_0_);
+      diff_gradient = Math::ScalarMult(5, gradient_0_);
+    }
+
+    cell->UpdatePosition(diff_gradient);
   }
 
+ private:
+  bool init_ = false;
+  DiffusionGrid* dg_0_ = nullptr;
+  DiffusionGrid* dg_1_ = nullptr;
+  std::array<float, 3> gradient_0_;
+  std::array<float, 3> gradient_1_;
   ClassDefNV(Chemotaxis, 1);
 };
 
 // 1b. Define secretion behavior:
-// One cell is assigned to secrete Kalium artificially at one location
-struct KaliumSecretion : public BaseBiologyModule {
-  KaliumSecretion() : BaseBiologyModule() {}
+struct SubstanceSecretion : public BaseBiologyModule {
+  // Daughter cells inherit this biology module
+  SubstanceSecretion() : BaseBiologyModule(gAllBmEvents) {}
 
   template <typename T>
   void Run(T* cell) {
-    static auto dg = GetDiffusionGrid(kKalium);
-    array<float, 3> secretion_position = {50, 50, 50};
-    dg->IncreaseConcentrationBy(secretion_position, 4);
+    if (!init_) {
+      dg_0_ = GetDiffusionGrid(kSubstance_0);
+      dg_1_ = GetDiffusionGrid(kSubstance_1);
+      init_ = true;
+    }
+    auto& secretion_position = cell->GetPosition();
+    if (cell->GetCellType() == 1) {
+      dg_1_->IncreaseConcentrationBy(secretion_position, 1);
+    } else {
+      dg_0_->IncreaseConcentrationBy(secretion_position, 1);
+    }
   }
 
-  ClassDefNV(KaliumSecretion, 1);
+ private:
+  bool init_ = false;
+  DiffusionGrid* dg_0_ = nullptr;
+  DiffusionGrid* dg_1_ = nullptr;
+  ClassDefNV(SubstanceSecretion, 1);
 };
 
 // 2. Define compile time parameter
 template <typename Backend>
 struct CompileTimeParam : public DefaultCompileTimeParam<Backend> {
-  using BiologyModules = Variant<GrowDivide, Chemotaxis, KaliumSecretion>;
-  // use default Backend and AtomicTypes
+  using BiologyModules = Variant<Chemotaxis, SubstanceSecretion>;
+  using AtomicTypes = VariadicTypedef<MyCell>;
 };
 
+// Returns 0 if the cell locations within a subvolume of the total system,
+// comprising approximately target_n cells, are arranged as clusters, and 1
+// otherwise.
+template <typename TResourceManager = ResourceManager<>>
+static bool GetCriterion(float spatial_range, int target_n) {
+  auto rm = TResourceManager::Get();
+  auto my_cells = rm->template Get<MyCell>();
+  int n = my_cells->size();
+
+  // number of cells that are close (i.e. within a distance of
+  // spatial_range)
+  int num_close = 0;
+  float curr_dist;
+  // number of cells of the same type, and that are close (i.e.
+  // within a distance of spatial_range)
+  int same_type_close = 0;
+  // number of cells of opposite types, and that are close (i.e.
+  // within a distance of spatial_range)
+  int diff_type_close = 0;
+
+  std::vector<array<float, 3>> pos_sub_vol(n);
+  std::vector<int> types_sub_vol(n);
+
+  // Define the subvolume to be the first octant of a cube
+  float sub_vol_max = Param::max_bound_ / 2;
+
+  // The number of cells within the subvolume
+  int num_cells_sub_vol = 0;
+
+  // the locations of all cells within the subvolume are copied
+  // to pos_sub_vol
+  for (int i1 = 0; i1 < n; i1++) {
+    auto& pos = (*my_cells)[i1].GetPosition();
+    auto type = (*my_cells)[i1].GetCellType();
+
+    if ((fabs(pos[0] - 0.5) < sub_vol_max) &&
+        (fabs(pos[1] - 0.5) < sub_vol_max) &&
+        (fabs(pos[2] - 0.5) < sub_vol_max)) {
+      pos_sub_vol[num_cells_sub_vol][0] = pos[0];
+      pos_sub_vol[num_cells_sub_vol][1] = pos[1];
+      pos_sub_vol[num_cells_sub_vol][2] = pos[2];
+      types_sub_vol[num_cells_sub_vol] = type;
+      num_cells_sub_vol++;
+    }
+  }
+
+  std::cout << "number of cells in subvolume: " << num_cells_sub_vol
+            << std::endl;
+
+  // If there are not enough cells within the subvolume, the correctness
+  // criterion is not fulfilled
+  if (((static_cast<float>((num_cells_sub_vol))) /
+       static_cast<float>(target_n)) < 0.25) {
+    std::cout << "not enough cells in subvolume: " << num_cells_sub_vol
+              << std::endl;
+    return false;
+  }
+
+  // If there are too many cells within the subvolume, the correctness
+  // criterion is not fulfilled
+  if (((static_cast<float>((num_cells_sub_vol))) /
+       static_cast<float>(target_n)) > 4) {
+    std::cout << "too many cells in subvolume: " << num_cells_sub_vol
+              << std::endl;
+    return false;
+  }
+
+#pragma omp parallel for reduction(+ : same_type_close, diff_type_close, \
+                                   num_close)
+  for (int i1 = 0; i1 < num_cells_sub_vol; i1++) {
+    for (int i2 = i1 + 1; i2 < num_cells_sub_vol; i2++) {
+      curr_dist = Math::GetL2Distance(pos_sub_vol[i1], pos_sub_vol[i2]);
+      if (curr_dist < spatial_range) {
+        num_close++;
+        if (types_sub_vol[i1] * types_sub_vol[i2] < 0) {
+          diff_type_close++;
+        } else {
+          same_type_close++;
+        }
+      }
+    }
+  }
+
+  float correctness_coefficient =
+      (static_cast<float>(diff_type_close)) / (num_close + 1.0);
+
+  // check if there are many cells of opposite types located within a close
+  // distance, indicative of bad clustering
+  if (correctness_coefficient > 0.1) {
+    std::cout << "cells in subvolume are not well-clustered: "
+              << correctness_coefficient << std::endl;
+    return false;
+  }
+
+  // check if clusters are large enough, i.e. whether cells have more than 100
+  // cells of the same type located nearby
+  float avg_neighbors =
+      (static_cast<float>(same_type_close / num_cells_sub_vol));
+  std::cout << "average neighbors in subvolume: " << avg_neighbors << std::endl;
+  if (avg_neighbors < 5) {
+    std::cout << "cells in subvolume do not have enough neighbors: "
+              << avg_neighbors << std::endl;
+    return false;
+  }
+
+  std::cout << "correctness coefficient: " << correctness_coefficient
+            << std::endl;
+
+  return true;
+}
+
 inline int Simulate(int argc, const char** argv) {
-  // 3. Initialize BioDynaMo
   InitializeBiodynamo(argc, argv);
 
-  Param::backup_interval_ = 1;
-  // 4a. Define initial model - in this example: two cells
-  auto construct = [](const std::array<float, 3>& position) {
-    Cell cell(position);
-    cell.SetDiameter(30);
-    cell.SetAdherence(0.4);
-    cell.SetMass(1.0);
+  // 3. Define initial model
+
+  // Create an artificial bounds for the simulation space
+  Param::bound_space_ = true;
+  Param::min_bound_ = 0;
+  Param::max_bound_ = 250;
+  Param::run_mechanical_interactions_ = true;
+  int res = 3;
+  int num_cells = 20000;
+
+  gTRandom.SetSeed(4357);
+
+  // Construct num_cells/2 cells of type 1
+  auto construct_0 = [](const std::array<float, 3>& position) {
+    MyCell cell(position);
+    cell.SetDiameter(10);
+    cell.SetCellType(1);
+    cell.AddBiologyModule(SubstanceSecretion());
     cell.AddBiologyModule(Chemotaxis());
-    cell.AddBiologyModule(GrowDivide(32, 1500, {gAllBmEvents}));
-    // Let only one cell be responsible for the artificial substance secretion
-    if (position[0] == 0 && position[1] == 0 && position[2] == 0) {
-      cell.AddBiologyModule(KaliumSecretion());
-    }
     return cell;
   };
-  std::vector<std::array<float, 3>> positions;
-  positions.push_back({0, 0, 0});
-  positions.push_back({100, 0, 0});
-  positions.push_back({0, 100, 0});
-  positions.push_back({0, 0, 100});
-  positions.push_back({0, 100, 100});
-  positions.push_back({100, 0, 100});
-  positions.push_back({100, 100, 0});
-  positions.push_back({100, 100, 100});
-  ModelInitializer::CreateCells(positions, construct);
+  ModelInitializer::CreateCellsRandom(Param::min_bound_, Param::max_bound_,
+                                      num_cells / 2, construct_0);
 
-  // 4b. Define the substances that cells may secrete
-  ModelInitializer::DefineSubstance(kKalium, "Kalium", 0.4, 0, 5);
+  // Construct num_cells/2 cells of type -1
+  auto construct_1 = [](const std::array<float, 3>& position) {
+    MyCell cell(position);
+    cell.SetDiameter(10);
+    cell.SetCellType(-1);
+    cell.AddBiologyModule(SubstanceSecretion());
+    cell.AddBiologyModule(Chemotaxis());
+    return cell;
+  };
+  ModelInitializer::CreateCellsRandom(Param::min_bound_, Param::max_bound_,
+                                      num_cells / 2, construct_1);
 
-  // 5. Run simulation for N timesteps
-  Param::live_visualization_ = true;
+  // 3. Define the substances that cells may secrete
+  // Order: substance_name, diffusion_coefficient, decay_constant, resolution
+  ModelInitializer::DefineSubstance(kSubstance_0, "Substance_0", 0.5, 0.1, res);
+  ModelInitializer::DefineSubstance(kSubstance_1, "Substance_1", 0.5, 0.1, res);
+
+  // 4. Run simulation for N timesteps
   Scheduler<> scheduler;
-  scheduler.Simulate(3500);
-  return 0;
+
+  scheduler.Simulate(5001);
+
+  float spatial_range = 5;
+  auto crit = GetCriterion(spatial_range, num_cells / 8);
+  return !crit;
 }
 
 }  // namespace bdm
 
-#endif  // DEMO_DIFFUSION_MODULE_H_
+#endif  // INTEGRATION_SOMA_CLUSTERING_H_

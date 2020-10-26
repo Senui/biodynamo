@@ -3,6 +3,7 @@
 
 #include <chrono>
 #include <string>
+#include <thread>
 
 #include "biology_module_op.h"
 #include "bound_space_op.h"
@@ -34,8 +35,7 @@ class Scheduler {
       restore_point_ = backup_.GetSimulationStepsFromBackup();
     }
     visualization_ = CatalystAdaptor<>::GetInstance();
-    visualization_->Initialize(BDM_SRC_DIR
-                                "/visualization/simple_pipeline.py");
+    visualization_->Initialize(BDM_SRC_DIR "/visualization/simple_pipeline.py");
     if (Param::use_gpu_) {
       InitializeGPUEnvironment<>();
     }
@@ -87,10 +87,23 @@ class Scheduler {
     if (Param::bound_space_) {
       rm->ApplyOnAllTypes(bound_space_);
     }
-    rm->ApplyOnAllTypes(diffusion_);
-    rm->ApplyOnAllTypes(biology_);
-    if (Param::run_mechanical_interactions_) {
-      rm->ApplyOnAllTypes(physics_);  // Bounding box applied at the end
+
+    if (Param::heterogeneous_) {
+      std::thread thread1([&]() { rm->ApplyOnAllTypes(diffusion_); });
+      std::thread thread2([&]() {
+        if (Param::run_mechanical_interactions_) {
+          rm->ApplyOnAllTypes(physics_);  // Bounding box applied at the end
+        }
+      });
+      rm->ApplyOnAllTypes(biology_);
+      thread1.join();
+      thread2.join();
+    } else {
+      rm->ApplyOnAllTypes(diffusion_);
+      if (Param::run_mechanical_interactions_) {
+        rm->ApplyOnAllTypes(physics_);  // Bounding box applied at the end
+      }
+      rm->ApplyOnAllTypes(biology_);
     }
     CommitChangesAndUpdateReferences();
   }
