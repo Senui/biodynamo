@@ -21,7 +21,7 @@ class Timing {
   ~Timing() {
     int64_t duration = (timestamp() - start_);
     if (aggregator_ == nullptr) {
-      std::cout << text_ << " " << duration << " ms" << std::endl;
+      // std::cout << text_ << " " << duration << " ms" << std::endl;
     } else {
       aggregator_->AddEntry(text_, duration);
     }

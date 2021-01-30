@@ -12,16 +12,16 @@
 #include "exporter.h"
 #include "neighbor_nanoflann_op.h"
 #include "neighbor_op.h"
+#include "param.h"
 #include "resource_manager.h"
 #include "scheduler.h"
 #include "timing.h"
 #include "timing_aggregator.h"
-#include "param.h"
 // #include <ittnotify.h>
 
 using bdm::Cell;
-using bdm::Param;
 using bdm::Exporter;
+using bdm::Param;
 using bdm::Scalar;
 using bdm::Soa;
 using bdm::Timing;
@@ -62,10 +62,16 @@ void execute(size_t num_cells, size_t iterations, double min_bound,
   }
 
   auto stop = timer.timestamp();
-  std::cout << stop - start << std::endl;
+  std::cout << (stop - start) << std::endl;
 }
 
 int main(int args, char** argv) {
+  if (Param::kSimulationMaximalDisplacement > 1e-9) {
+    std::cout
+        << "ERROR - kSimulationMaximalDisplacement must be set to 0 for this benchmark!"
+        << std::endl;
+    return 1;
+  }
   double min_bound = 0;
   double max_bound;
   if (args != 4 ||
