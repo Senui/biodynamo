@@ -62,4 +62,4 @@ install_manifest.txt
 Doxyfile
 doc/html
 doc/latex
-
+.vscode
