@@ -67,9 +67,9 @@ void execute(size_t num_cells, size_t iterations, double min_bound,
 
 int main(int args, char** argv) {
   if (Param::kSimulationMaximalDisplacement > 1e-9) {
-    std::cout
-        << "ERROR - kSimulationMaximalDisplacement must be set to 0 for this benchmark!"
-        << std::endl;
+    std::cout << "ERROR - kSimulationMaximalDisplacement must be set to 0 for "
+                 "this benchmark!"
+              << std::endl;
     return 1;
   }
   double min_bound = 0;
