@@ -81,8 +81,6 @@ class NeighborNanoflannOp {
 // calc neighbors
 #pragma omp parallel for
     for (size_t i = 0; i < cells->size(); i++) {
-      // fixme make param
-      // according to roman 50 - 100 micron
       double search_radius = distance_;
 
       std::vector<std::pair<size_t, double>> ret_matches;

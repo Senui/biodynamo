@@ -72,6 +72,14 @@ class CellExt : public Base {
     neighbors_[idx_] = neighbors;
   }
 
+  size_t CountNeighbors() {
+    size_t total = 0;
+    for (auto& n : neighbors_) {
+      total += n.size();
+    }
+    return total;
+  }
+
   void ChangeVolume(double speed) {
     // scaling for integration step
     double dV = speed * Param::kSimulationTimeStep;

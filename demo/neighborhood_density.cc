@@ -27,12 +27,11 @@ using bdm::Soa;
 using bdm::Timing;
 using bdm::TimingAggregator;
 
-void execute(size_t num_cells, size_t iterations, double min_bound,
-             double max_bound) {
-  std::random_device
-      rd;  // Will be used to obtain a seed for the random number engine
+void execute(size_t num_cells, size_t iterations, double min, double max) {
+  // Will be used to obtain a seed for the random number engine
+  std::random_device rd;
   std::mt19937 gen(rd());  // Standard mersenne_twister_engine seeded with rd()
-  std::uniform_real_distribution<> dis(min_bound, max_bound);
+  std::uniform_real_distribution<> dis(min, max);
   auto cells = Cell<>::NewEmptySoa();
   cells.reserve(num_cells);
   for (size_t i = 0; i < num_cells; i++) {
@@ -48,17 +47,20 @@ void execute(size_t num_cells, size_t iterations, double min_bound,
     cells.push_back(cell);
   }
 
-  bdm::NeighborNanoflannOp neighborhood(400);
+  bdm::NeighborNanoflannOp neighborhood(20);
   bdm::DividingCellOp biology;
-  bdm::DisplacementOp displacment;
+  bdm::DisplacementOp displacement;
 
   Timing timer;
   auto start = timer.timestamp();
 
   for (size_t i = 0; i < iterations; i++) {
     neighborhood.Compute(&cells);
+    // size_t total_neighbors = cells.CountNeighbors();
+    // std::cout << "Neighbors per agent = " << total_neighbors / num_cells
+    //           << std::endl;
     biology.Compute(&cells);
-    displacment.Compute(&cells);
+    displacement.Compute(&cells);
   }
 
   auto stop = timer.timestamp();
@@ -66,12 +68,6 @@ void execute(size_t num_cells, size_t iterations, double min_bound,
 }
 
 int main(int args, char** argv) {
-  if (Param::kSimulationMaximalDisplacement > 1e-9) {
-    std::cout << "ERROR - kSimulationMaximalDisplacement must be set to 0 for "
-                 "this benchmark!"
-              << std::endl;
-    return 1;
-  }
   double min_bound = 0;
   double max_bound;
   if (args != 4 ||
@@ -82,7 +78,13 @@ int main(int args, char** argv) {
               << "<iterations> <max_bound> \n"
               << std::endl;
     // clang-format on
-    return 0;
+    return 1;
+  }
+  if (Param::kSimulationMaximalDisplacement > 1e-9) {
+    std::cout << "ERROR - kSimulationMaximalDisplacement must be set to 0 for "
+                 "this benchmark!"
+              << std::endl;
+    return 1;
   }
   size_t num_cells;
   size_t iterations;
