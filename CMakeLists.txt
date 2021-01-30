@@ -289,4 +289,10 @@ if(demo)
                      SOURCES demo/gene_regulation.cc
                      HEADERS demo/gene_regulation.h
                      LIBRARIES biodynamo)
+
+  # --------------------- build gene_regulation executable ---------------------
+  bdm_add_executable(neighborhood_density
+                     SOURCES demo/neighborhood_density.cc
+                     HEADERS demo/neighborhood_density.h
+                     LIBRARIES biodynamo)
 endif()

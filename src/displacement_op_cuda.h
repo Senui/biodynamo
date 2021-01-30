@@ -32,8 +32,7 @@ class DisplacementOpCuda {
     uint32_t num_objects = cells->size();
     std::array<uint32_t, 3> num_boxes_axis;
     std::array<int32_t, 3> grid_dimensions;
-    float squared_radius =
-        grid.GetLargestObjectSize() * grid.GetLargestObjectSize();
+    float squared_radius = 20;
 
     // We need to create a mass vector, because it is not stored by default in
     // a cell container

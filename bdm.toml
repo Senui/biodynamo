@@ -1,5 +1,8 @@
 [development]
-statistics = true
+statistics = false
+
+[simulation]
+max_displacement = 0.0
 
 [experimental]
 use_gpu = true
