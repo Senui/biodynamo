@@ -53,7 +53,7 @@ inline int Simulate(int argc, const char** argv) {
   auto start = t.Timestamp();
   scheduler.Simulate(iterations);
   auto stop = t.Timestamp();
-  std::cout << stop - start << std::endl;
+  std::cout << stop - start;
   return 0;
 }
 
