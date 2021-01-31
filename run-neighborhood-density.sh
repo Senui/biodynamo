@@ -12,19 +12,20 @@
 # max-bound = 250 -> ~47 neighbors per agent
 
 POPULATION=2000000
-ITERATIONS=5
+ITERATIONS=20
 
 echo "Warming up GPU..."
 for it in {1..5}; do
   ./build/neighborhood_density $POPULATION $ITERATIONS 400;
 done
 
+# Run on one NUMA domain (0-15, 48-63 on olgpu-01)
 for MB in 900 600 500 400 350 300 275 250; do
+  FILENAME=gpu.csv
   echo "Running benchmark with max-bound = $MB"
   for it in {1..5}; do
-    ./build/neighborhood_density $POPULATION $ITERATIONS $MB >> gpu.csv
-    echo -n "," >> gpu.csv
+    OMP_NUM_THREADS=32 taskset --cpu-list 0-15,48-63 ./build/neighborhood_density $POPULATION $ITERATIONS $MB >> $FILENAME
+    echo -n "," >> $FILENAME
   done
-  echo "" >> gpu.csv
+  echo "" >> $FILENAME
 done
-
