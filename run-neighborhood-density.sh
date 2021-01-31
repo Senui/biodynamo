@@ -14,13 +14,40 @@
 POPULATION=2000000
 ITERATIONS=5
 
-for MB in 900 600 500 400 350 300 275 250; do
-  echo "Running benchmark with max-bound = $MB"
-  ./build/neighborhood_density $POPULATION $ITERATIONS $MB >> 32t_cpu.csv
+echo "Warming up CPU..."
+for it in {1..5}; do
+  ./build/neighborhood_density $POPULATION $ITERATIONS 400 > /dev/null
 done
 
+# Run with all threads (64 on olgpu-01)
 for MB in 900 600 500 400 350 300 275 250; do
+  FILENAME=64t_cpu.csv
   echo "Running benchmark with max-bound = $MB"
-  OMP_NUM_THREADS=1 ./build/neighborhood_density $POPULATION $ITERATIONS $MB >> 1t_cpu.csv
+  for it in {1..5}; do
+    ./build/neighborhood_density $POPULATION $ITERATIONS $MB >> $FILENAME
+    echo -n "," >> $FILENAME
+  done
+  echo "" >> $FILENAME
 done
 
+# Run on one NUMA domain (0-15, 48-63 on olgpu-01)
+for MB in 900 600 500 400 350 300 275 250; do
+  FILENAME=32t_cpu.csv
+  echo "Running benchmark with max-bound = $MB"
+  for it in {1..5}; do
+    OMP_NUM_THREADS=32 taskset --cpu-list 0-15,48-63 ./build/neighborhood_density $POPULATION $ITERATIONS $MB >> $FILENAME
+    echo -n "," >> $FILENAME
+  done
+  echo "" >> $FILENAME
+done
+
+# Run with one thread
+for MB in 900 600 500 400 350 300 275 250; do
+  FILENAME=1t_cpu.csv
+  echo "Running benchmark with max-bound = $MB"
+  for it in {1..5}; do
+    OMP_NUM_THREADS=1 ./build/neighborhood_density $POPULATION $ITERATIONS $MB >> $FILENAME
+    echo -n "," >> $FILENAME
+  done
+  echo "" >> $FILENAME
+done

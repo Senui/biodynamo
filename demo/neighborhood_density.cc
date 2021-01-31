@@ -64,7 +64,7 @@ void execute(size_t num_cells, size_t iterations, double min, double max) {
   }
 
   auto stop = timer.timestamp();
-  std::cout << (stop - start) << std::endl;
+  std::cout << stop - start;
 }
 
 int main(int args, char** argv) {
