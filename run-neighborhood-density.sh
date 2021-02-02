@@ -12,12 +12,7 @@
 # max-bound = 250 -> ~47 neighbors per agent
 
 POPULATION=2000000
-ITERATIONS=5
-
-echo "Warming up CPU..."
-for it in {1..5}; do
-  ./build/neighborhood_density $POPULATION $ITERATIONS 400 > /dev/null
-done
+ITERATIONS=20
 
 # Run with all threads (64 on olgpu-01)
 for MB in 900 600 500 400 350 300 275 250; do
